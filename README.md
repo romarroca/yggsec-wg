@@ -78,7 +78,7 @@ sudo ./scripts/init.sh
    - Choose DHCP or static IP configuration
    - Configure optional LAN interface
 
-<img width="1999" height="603" alt="image" src="https://github.com/user-attachments/assets/37f8d664-822a-49e1-84b1-48828167605a" />
+<img width="1223" height="1267" alt="image" src="https://github.com/user-attachments/assets/c506985b-9acb-4a4e-ad29-ecd900178462" />
 
 *Interactive installation interface selection*
 
