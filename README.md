@@ -2,7 +2,7 @@
 
 A modern, secure WireGuard VPN management platform with built-in firewall and intrusion prevention system (IPS) capabilities.
 
-<img width="1937" height="1354" alt="image" src="https://github.com/user-attachments/assets/9506d7b3-4a28-440d-8f1f-44c707568fb0" />
+<img width="1695" height="1349" alt="image" src="https://github.com/user-attachments/assets/fae10917-547d-4772-8ded-3a3333d5794d" />
 
 *Main dashboard showing WireGuard peers and network topology*
 
@@ -17,8 +17,7 @@ A modern, secure WireGuard VPN management platform with built-in firewall and in
 - **Security Hardened** - CSRF protection, rate limiting, secure sessions
 - **QR Code Support** - Mobile client configuration via QR codes
 
-<img width="1934" height="1350" alt="image" src="https://github.com/user-attachments/assets/cec07991-f973-4f74-8fc1-786121dbdeb1" />
-
+<img width="1697" height="1348" alt="image" src="https://github.com/user-attachments/assets/54e952aa-2b2c-4f02-b32f-f4a32c5f5830" />
 
 *Firewall rules management interface Dark Mode*
 
@@ -133,9 +132,6 @@ yggsec ALL=(root) NOPASSWD: \
 - Generates self-signed certificates for HTTPS
 - Stored in `/etc/nginx/ssl/` with proper permissions (600/644)
 
-![Security Configuration](screenshots/security.png)
-*Security settings and capability configuration*
-
 ## Post-Installation Setup
 
 ### 1. Factory Reset (First Time Setup)
@@ -159,7 +155,7 @@ Navigate to your server's IP address:
 - **HTTPS**: `https://your-server-ip`
 - **Login**: Use the admin credentials you set
 
-<img width="1618" height="1354" alt="image" src="https://github.com/user-attachments/assets/ac00c024-19a4-40df-a4cf-f8765f359fa7" />
+<img width="1698" height="1354" alt="image" src="https://github.com/user-attachments/assets/ac7ca5af-a9ff-4acb-a7c8-7ce639cabec9" />
 
 *Secure login interface*
 
@@ -170,7 +166,7 @@ Navigate to your server's IP address:
 3. Download configuration or scan QR code
 4. Configure client device
 
-<img width="1509" height="854" alt="image" src="https://github.com/user-attachments/assets/8d77c03e-1f9e-4c32-b5a7-d586ab256aae" />
+<img width="1688" height="1349" alt="image" src="https://github.com/user-attachments/assets/c0b49bb9-a342-422a-88af-73a90ca77315" />
 
 *VPN peer configuration and QR code generation*
 
@@ -230,10 +226,8 @@ sudo systemctl status wg-quick@wg0
 - Connection status with ping testing
 - Bandwidth usage tracking
 - Active connection monitoring
-- Firewall rule hit counters
 
-<img width="1929" height="1347" alt="image" src="https://github.com/user-attachments/assets/71414d7e-2736-4fd2-842c-d332667dfff2" />
-
+<img width="1692" height="1357" alt="image" src="https://github.com/user-attachments/assets/7bd3f743-0a1d-4ac3-97cc-07140a3f1492" />
 
 
 ### Intrusion Prevention
@@ -242,7 +236,8 @@ sudo systemctl status wg-quick@wg0
 - Traffic analysis and blocking
 - Event logging and retention
 
-<img width="1932" height="1353" alt="image" src="https://github.com/user-attachments/assets/bb319145-d333-4a9f-bf55-059f44277204" />
+<img width="1704" height="1352" alt="image" src="https://github.com/user-attachments/assets/ea269dde-7421-4d9d-ac31-d87d8d9a37ba" />
+
 
 *Real-time network monitoring and IPS alerts*
 
