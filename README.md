@@ -65,7 +65,7 @@ The installation script will automatically install these packages:
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/yourusername/yggsec-wg.git
+git clone https://github.com/romarroca/yggsec-wg.git
 cd yggsec-wg
 ```
 
