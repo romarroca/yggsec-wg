@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block title %}YggSec · Firewall{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<style>
+  .section-title{margin-bottom:.5rem}
+  .form-control,.form-select{border:1.5px solid var(--btn-border);background:var(--btn-bg);color:var(--ink);border-radius:8px}
+  .form-control:focus,.form-select:focus{border-color:var(--btn-border);box-shadow:0 0 0 .15rem rgba(0,0,0,.08);color:var(--ink);background:var(--btn-hover-bg)}
+  body.theme-dark .form-control::placeholder{color:#9aa7b3;opacity:1}
+  #rules-table thead th{background:var(--card-muted);color:var(--ink)}
+  body.theme-dark #rules-table thead th{background:#2b333a!important;color:#e9eef3!important;border-bottom-color:#2d3942!important}
+  body.theme-dark #rules-table tbody td{border-top-color:#2d3942!important}
+  body.theme-dark #rules-table tbody tr:nth-of-type(odd) td{background:#1e252b!important}
+  body.theme-dark #rules-table tbody tr:nth-of-type(even) td{background:#20272e!important}
+  body.theme-dark #rules-table tbody tr:hover td{background:#263038!important}
+  body.theme-dark #rules-table td,body.theme-dark #rules-table th{color:var(--ink)!important}
+  .badge.bg-success{background:#6ea96b!important}
+  .badge.bg-danger{background:#d66a64!important}
+  .badge.bg-info{background:#007bff!important;color:#fff!important}
+  .btn-icon{border:1.5px solid var(--btn-border);background:var(--btn-bg);color:var(--ink);border-radius:8px;padding:.35rem .55rem}
+  .btn-icon:hover{background:var(--btn-hover-bg)}
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-3 section-title">
+  Firewall Settings
+  <!-- Reset: now uses themed modal -->
+  <form id="resetForm" method="POST" class="d-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <input type="hidden" name="action" value="reset">
+    <button id="btnReset" type="button" class="btn btn-icon ms-2" title="Resets the firewall">
+      <i class="bi bi-x-octagon"></i>
+    </button>
+  </form>
+</h2>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-header fw-bold d-flex justify-content-between align-items-center">
+    <span>Current Rules</span>
+    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addRuleModal">+ NEW</button>
+  </div>
+  <div class="card-body">
+    {% if rules %}
+    <table id="rules-table" class="table table-striped table-bordered align-middle">
+      <thead>
+        <tr>
+          <th class="w-6">Line</th>
+          <th class="w-16">Name</th>
+          <th style="width:16%;">Source IP</th>
+          <th style="width:16%;">Destination IP</th>
+          <th style="width:10%;">Protocol</th>
+          <th style="width:10%;">Dest Port</th>
+          <th style="width:10%;">Action</th>
+          <th style="width:1%;white-space:nowrap" class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rules %}
+        <tr>
+          <td>{{ r.line }}</td>
+          <td><span class="fw-bold">{{ r.name }}</span></td>
+          <td>{{ r.src or '—' }}</td>
+          <td>{{ r.dst or '—' }}</td>
+          <td>{{ r.proto or 'ANY' }}</td>
+          <td>{{ r.dport or '—' }}</td>
+          <td>
+            {% if r.action == "TRUST" %}<span class="badge bg-success">TRUST</span>
+            {% elif r.action == "ALLOW" %}<span class="badge bg-info">ALLOW</span>
+            {% elif r.action == "DROP" %}<span class="badge bg-danger">DROP</span>
+            {% else %}<span class="badge bg-secondary">UNKNOWN</span>{% endif %}
+          </td>
+          <td class="text-end" style="white-space:nowrap;">
+            <div class="btn-group">
+              <button type="button" class="btn btn-icon"
+                      data-bs-toggle="modal" data-bs-target="#addRuleModal"
+                      data-handle="{{ r.handle }}"
+                      data-line="{{ r.line }}"
+                      data-name="{{ r.name }}"
+                      data-src="{{ r.src }}"
+                      data-dst="{{ r.dst }}"
+                      data-proto="{{ r.proto }}"
+                      data-dport="{{ r.dport }}"
+                      data-action="{{ r.action }}">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <form method="POST" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="action" value="delete_rule">
+                <input type="hidden" name="handle" value="{{ r.handle }}">
+                <button type="submit" class="btn btn-icon" title="Delete Rule"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted mb-0">No rules configured yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+  <div class="card-body py-3 text-center text-muted">
+    <strong>Default Policy:</strong> {{ default_policy or 'DROP' }}
+  </div>
+</div>
+
+<!-- Add/Edit Rule Modal -->
+<div class="modal fade" id="addRuleModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Add Rule</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="ruleForm" method="POST" action="{{ url_for('firewall_page') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <!-- operation + identifiers -->
+          <input type="hidden" name="action" value="add_rule" id="formAction">
+          <input type="hidden" name="handle" id="ruleHandle">
+          <!-- index decides placement when re-adding -->
+          <input type="hidden" name="index"  id="ruleIndexHidden">
+
+          <div class="mb-3">
+            <label class="form-label">Rule Name</label>
+            <input type="text" class="form-control" name="rule_name" id="ruleName"
+                   placeholder="Rule Name (required, max 20 chars)"
+                   maxlength="20" pattern="^[A-Za-z0-9_-]{1,20}$" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Source IP</label>
+            <input type="text" class="form-control" name="src_ip" id="srcIp" placeholder="Source IP (optional)">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Destination IP</label>
+            <input type="text" class="form-control" name="dst_ip" id="dstIp" placeholder="Destination IP (optional)">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Port</label>
+            <input type="number" class="form-control" id="portInput" name="dst_port" min="1" max="65535" placeholder="Port (optional)">
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Protocol</label>
+            <select class="form-select" id="protoSelect" name="proto">
+              <option value="tcp" selected>TCP</option>
+              <option value="udp">UDP</option>
+              <option value="icmp">ICMP</option>
+              <option value="tcpudp">TCP+UDP</option>
+              <option value="any">Any</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Action</label>
+            <select class="form-select" name="action_type" id="actionType">
+              <option value="TRUST" selected>TRUST</option>
+              <option value="ALLOW">ALLOW</option>
+              <option value="DROP">DROP</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Position</label>
+            <select class="form-select" name="position" id="positionSelect" onchange="toggleIndexInput(this.value)">
+              <option value="append" selected>Append (Bottom)</option>
+              <option value="insert">Insert (Top)</option>
+              <option value="index">Insert at Line</option>
+            </select>
+          </div>
+
+          <div class="mb-3" id="indexInput" style="display:none;">
+            <label class="form-label">Line #</label>
+            <input type="number" class="form-control" id="ruleIndexVisible" min="1" placeholder="Line #">
+          </div>
+
+          <div class="text-end">
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Reset Modal -->
+<div class="modal fade" id="confirmResetModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reset firewall?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        All rules will be deleted. Default policy will be set to <strong>DROP</strong>.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button id="confirmResetBtn" type="button" class="btn btn-danger">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleIndexInput(v){const el=document.getElementById('indexInput'); if(el) el.style.display=(v==='index')?'':'none';}
+
+document.getElementById('addRuleModal').addEventListener('show.bs.modal',(e)=>{
+  const t=e.relatedTarget, m=e.target;
+  const title=m.querySelector('.modal-title');
+  const formAct=m.querySelector('#formAction');
+  const handle=m.querySelector('#ruleHandle');
+  const idxHid=m.querySelector('#ruleIndexHidden');
+  const idxVis=m.querySelector('#ruleIndexVisible');
+  const name=m.querySelector('#ruleName');
+  const src=m.querySelector('#srcIp');
+  const dst=m.querySelector('#dstIp');
+  const port=m.querySelector('#portInput');
+  const protoSel=m.querySelector('#protoSelect');
+  const actSel=m.querySelector('#actionType');
+  const posSel=m.querySelector('#positionSelect');
+
+  const isEdit=!!(t && t.dataset && t.dataset.handle);
+
+  if(isEdit){
+    title.textContent='Edit Rule';
+    formAct.value='edit_rule';
+    handle.value=t.dataset.handle||'';
+    idxHid.value=t.dataset.line||'';
+    idxVis.value=t.dataset.line||'';
+    posSel.value='index'; toggleIndexInput('index');
+
+    name.value=t.dataset.name||'';
+    src.value=t.dataset.src||'';
+    dst.value=t.dataset.dst||'';
+    port.value=t.dataset.dport||'';
+    let p=(t.dataset.proto||'').toLowerCase(); if(!p||p==='any')p='any';
+    if(['tcp','udp','icmp','tcpudp','any'].indexOf(p)===-1)p='any';
+    protoSel.value=p;
+    actSel.value=(t.dataset.action||'TRUST').toUpperCase();
+  }else{
+    title.textContent='Add Rule';
+    formAct.value='add_rule';
+    handle.value=''; idxHid.value=''; idxVis.value='';
+    name.value=''; src.value=''; dst.value=''; port.value='';
+    protoSel.value='tcp'; actSel.value='TRUST';
+    posSel.value='append'; toggleIndexInput('append');
+  }
+});
+
+document.getElementById('ruleIndexVisible').addEventListener('input',()=>{
+  document.getElementById('ruleIndexHidden').value=document.getElementById('ruleIndexVisible').value;
+});
+
+// Themed reset confirmation wiring
+document.addEventListener('DOMContentLoaded', () => {
+  const resetBtn = document.getElementById('btnReset');
+  const confirmBtn = document.getElementById('confirmResetBtn');
+  const modalEl = document.getElementById('confirmResetModal');
+  const modal = new bootstrap.Modal(modalEl);
+  const form = document.getElementById('resetForm');
+
+  resetBtn?.addEventListener('click', (e) => {
+    e.preventDefault();
+    modal.show();
+  });
+
+  confirmBtn?.addEventListener('click', () => {
+    modal.hide();
+    form?.submit();
+  });
+});
+</script>
+{% endblock %}
+

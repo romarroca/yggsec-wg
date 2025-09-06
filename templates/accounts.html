@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}YggSec · Account Settings{% endblock %}
+
+{% block content %}
+<h3 class="mb-3">Account Settings</h3>
+
+<div class="card">
+  <div class="card-header fw-bold">Profile</div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label">Username</label>
+        <input type="text" class="form-control" value="{{ user.username }}" disabled>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">First name</label>
+        <input type="text" class="form-control" value="{{ user.first_name }}" disabled>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Last name</label>
+        <input type="text" class="form-control" value="{{ user.last_name }}" disabled>
+      </div>
+    </div>
+
+    <div class="text-end mt-4">
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#changePwdModal">
+        Change password
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal fade" id="changePwdModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="POST" action="{{ url_for('account_change_password') }}" class="modal-content">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <div class="modal-header">
+        <h5 class="modal-title">Change Password</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Current password</label>
+          <input type="password" name="current_password" class="form-control" autocomplete="current-password" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">New password</label>
+          <input type="password" name="new_password" class="form-control" autocomplete="new-password" required>
+          <div class="form-text">Minimum 8 characters.</div>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Confirm new password</label>
+          <input type="password" name="confirm_password" class="form-control" autocomplete="new-password" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-primary" type="submit">Update password</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+

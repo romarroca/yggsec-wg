@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}YggSec · Monitor{% endblock %}
+
+{% block head_extra %}
+<style>
+  /* Page-specific tweaks (theme handled by base.html) */
+  .section-title { margin-bottom: .5rem; }
+
+  /* Reusable dark-mode table rules */
+  .monitor-table thead th{
+    background-color: var(--card-muted);
+    color: var(--ink);
+  }
+  body.theme-dark .monitor-table thead th{
+    background-color:#2b333a !important;
+    color:#e9eef3 !important;
+    border-bottom-color:#2d3942 !important;
+  }
+  body.theme-dark .monitor-table td,
+  body.theme-dark .monitor-table th{
+    color: var(--ink) !important;
+  }
+  body.theme-dark .monitor-table tbody td{
+    border-top-color:#2d3942 !important;
+  }
+  body.theme-dark .monitor-table tbody tr:nth-of-type(odd) td{ background-color:#1e252b !important; }
+  body.theme-dark .monitor-table tbody tr:nth-of-type(even) td{ background-color:#20272e !important; }
+  body.theme-dark .monitor-table tbody tr:hover td{ background-color:#263038 !important; }
+
+  body.theme-dark .text-muted{ color:#bfc8d1 !important; opacity:1 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="mb-0 section-title">Monitor</h2>
+    <div>
+      <button id="refresh-btn" class="btn btn-sm me-2">Refresh Now</button>
+      <button id="auto-btn" class="btn btn-sm btn-outline-secondary">Auto Refresh: Off</button>
+    </div>
+  </div>
+  <p class="text-muted">Snapshot: <span id="snapshot-time">{{ data.timestamp }}</span></p>
+
+  <!-- Row: Top IPs -->
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header fw-bold">Top Sources (IPs seen)</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table id="tbl-top-sources-wrap" class="table table-sm table-striped table-hover monitor-table">
+              <thead>
+                <tr><th>Source IP</th><th class="text-end">Flows</th></tr>
+              </thead>
+              <tbody id="tbl-top-sources">
+                {% for s in data.ips_seen.sources %}
+                <tr><td>{{ s.ip }}</td><td class="text-end">{{ s.flows }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header fw-bold">Top Destinations (IPs seen)</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table id="tbl-top-dests-wrap" class="table table-sm table-striped table-hover monitor-table">
+              <thead>
+                <tr><th>Destination IP</th><th class="text-end">Flows</th></tr>
+              </thead>
+              <tbody id="tbl-top-dests">
+                {% for d in data.ips_seen.destinations %}
+                <tr><td>{{ d.ip }}</td><td class="text-end">{{ d.flows }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ports seen -->
+  <div class="card my-4">
+    <div class="card-header fw-bold">Ports seen (from conntrack)</div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table id="tbl-ports-wrap" class="table table-sm table-striped table-hover monitor-table">
+          <thead>
+            <tr><th>Port</th><th>Service</th><th class="text-end">Flows</th></tr>
+          </thead>
+          <tbody id="tbl-ports">
+            {% for p in data.ips_seen.top_ports_by_flows %}
+            <tr>
+              <td>{{ p.port }}</td>
+              <td>{{ p.service }}</td>
+              <td class="text-end">{{ p.flows }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interface totals -->
+  <div class="card mb-4">
+    <div class="card-header fw-bold">Interface Totals</div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table id="tbl-ifaces-wrap" class="table table-sm table-striped table-hover monitor-table">
+          <thead>
+            <tr>
+              <th>Interface</th>
+              <th class="text-end">RX bytes</th>
+              <th class="text-end">RX pkts</th>
+              <th class="text-end">TX bytes</th>
+              <th class="text-end">TX pkts</th>
+            </tr>
+          </thead>
+          <tbody id="tbl-ifaces">
+            {% for i in data.interfaces %}
+            <tr>
+              <td>{{ i.iface }}</td>
+              <td class="text-end">{{ i.rx_bytes }}</td>
+              <td class="text-end">{{ i.rx_pkts }}</td>
+              <td class="text-end">{{ i.tx_bytes }}</td>
+              <td class="text-end">{{ i.tx_pkts }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/monitor.js') }}"></script>
+{% endblock %}
+

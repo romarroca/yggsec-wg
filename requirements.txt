@@ -1,0 +1,11 @@
+# Core dependencies
+netifaces==0.11.0
+flask==3.0.0
+gunicorn==21.2.0
+Werkzeug==3.0.1
+
+# Security dependencies
+flask-wtf==1.2.1
+flask-limiter==3.5.0
+redis==5.0.1
+

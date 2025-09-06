@@ -1,0 +1,13 @@
+/* Custom utility classes to replace inline styles */
+
+/* Width utilities */
+.w-auto { width: auto !important; }
+.w-6 { width: 6% !important; }
+.w-16 { width: 16% !important; }
+
+/* Min-width utilities */
+.min-w-160 { min-width: 160px !important; }
+
+/* Display utilities */
+.d-inline { display: inline !important; }
+.d-none { display: none !important; }
