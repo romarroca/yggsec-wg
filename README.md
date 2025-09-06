@@ -1,5 +1,7 @@
 # YggSec-WG
 
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 A modern, secure WireGuard VPN management platform with built-in firewall and intrusion prevention system (IPS) capabilities.
 
 <img width="1695" height="1349" alt="image" src="https://github.com/user-attachments/assets/fae10917-547d-4772-8ded-3a3333d5794d" />
