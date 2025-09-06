@@ -11,3 +11,16 @@
 /* Display utilities */
 .d-inline { display: inline !important; }
 .d-none { display: none !important; }
+
+/* QR Modal basic layout */
+.qr-wrap{ 
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+}
+.qr-frame{
+  display:inline-block;
+}
+#qrCanvas{ width:320px; height:320px; max-width:100%; height:auto; display:none; }
+#qrBox{ display:none; }

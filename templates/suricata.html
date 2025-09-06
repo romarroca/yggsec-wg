@@ -83,6 +83,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/suricata.js') }}"></script>
+<script nonce="{{ g.nonce }}" src="{{ url_for('static', filename='js/suricata.js') }}"></script>
 {% endblock %}
 

@@ -50,6 +50,7 @@ body{
   border-bottom: 2px solid var(--topbar-border);
 }
 .brand{ font-weight: 700; letter-spacing: .5px; color: var(--ink); }
+.brand-subtitle{ color: var(--ink); opacity: 0.7; }
 .logo{
   width: 45px; height: 45px; margin-right: .45rem;
   background: url('/static/logo.png') center/cover no-repeat;
@@ -313,6 +314,13 @@ body.theme-dark .table .text-muted, body.theme-dark .card .text-muted { color: #
 
 /* -------- Modals (dark mode) -------- */
 body.theme-dark .modal-content{ background:#1b2228; color: var(--ink); border:1px solid #2d3942; }
+
+/* QR Modal exception - white QR area but themed text */
+body.theme-dark #qrModal .modal-content{ background:#1b2228 !important; }
+body.theme-dark #qrModal .modal-body{ background:#1b2228 !important; }
+body.theme-dark #qrModal .modal-header{ background:#2b333a !important; color: var(--ink) !important; border-color:#2d3942 !important; }
+body.theme-dark #qrModal .modal-title{ color: var(--ink) !important; }
+body.theme-dark #qrModal .qr-wrap{ background:#ffffff !important; padding:10px !important; border-radius:8px !important; }
 body.theme-dark .modal-header, body.theme-dark .modal-footer{
   background:#2b333a; color: var(--ink); border-color:#2d3942;
 }
