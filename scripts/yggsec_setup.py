@@ -4,24 +4,24 @@ import os
 import sys
 import json
 import secrets
-import shutil, textwrap
+import shutil
 import subprocess
 from pathlib import Path
 from argparse import ArgumentParser
 from werkzeug.security import generate_password_hash
 
-import sys
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from src.core import core  # uses utils.run_priv internally
 import netifaces
 
-APP_DIR     = Path(__file__).resolve().parent.parent
-VENV_DIR    = APP_DIR / "venv"
-GUNICORN    = VENV_DIR / "bin" / "gunicorn"
-UNIT_PATH   = Path("/etc/systemd/system/yggsec.service")
-LOG_DIR     = Path("/var/log/yggsec")
-CONFIG_DIR  = APP_DIR / "configs"
-KEYS_DIR    = APP_DIR / "keys"
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from src.core import core  # uses utils.run_priv internally
+
+APP_DIR = Path(__file__).resolve().parent.parent
+VENV_DIR = APP_DIR / "venv"
+GUNICORN = VENV_DIR / "bin" / "gunicorn"
+UNIT_PATH = Path("/etc/systemd/system/yggsec.service")
+LOG_DIR = Path("/var/log/yggsec")
+CONFIG_DIR = APP_DIR / "configs"
+KEYS_DIR = APP_DIR / "keys"
 ADMINS_FILE = CONFIG_DIR / "admins.json"
 
 
@@ -65,7 +65,7 @@ def ensure_app_permissions(app_user: str):
     _chmod(KEYS_DIR, 0o700)
     if ADMINS_FILE.exists():
         _chmod(ADMINS_FILE, 0o640)
-    
+
     # Fix topology.json ownership if it exists (created by core.py as root)
     topology_file = APP_DIR / "topology.json"
     if topology_file.exists():
@@ -94,6 +94,7 @@ def write_admin(username: str, password: str | None, app_user: str):
     _chown(ADMINS_FILE, app_user)
     return None if password else plain
 
+
 def get_network_interfaces():
     """Get available network interfaces excluding loopback and WireGuard."""
     interfaces = []
@@ -108,6 +109,7 @@ def get_network_interfaces():
         except (KeyError, IndexError):
             interfaces.append((iface, "no IP"))
     return interfaces
+
 
 def initialize_topology_interactive(app_user: str):
     """Interactive topology initialization with interface detection."""
@@ -132,10 +134,10 @@ def initialize_topology_interactive(app_user: str):
         except KeyboardInterrupt:
             print("\nSetup cancelled by user.")
             sys.exit(1)
-    
+
     net_iface, selected_ip = interfaces[idx]
     print(f"Selected OUTSIDE: {net_iface}")
-    
+
     # Handle case where interface has no IP yet
     if selected_ip == "no IP":
         try:
@@ -145,7 +147,7 @@ def initialize_topology_interactive(app_user: str):
         except KeyboardInterrupt:
             print("\nSetup cancelled by user.")
             sys.exit(1)
-    
+
     # Optional LAN interface
     lan_subnets = []
     try:
@@ -165,11 +167,11 @@ def initialize_topology_interactive(app_user: str):
             except KeyboardInterrupt:
                 print("\nSetup cancelled by user.")
                 sys.exit(1)
-        
+
         lan_iface = interfaces[lidx][0]
         print(f"Selected LAN: {lan_iface}")
         lan_subnets = ["192.168.50.0/24"]
-    
+
     # Create topology with detected interface
     try:
         hub_priv, hub_pub = core.gen_keypair('hub')
@@ -185,18 +187,19 @@ def initialize_topology_interactive(app_user: str):
             'spokes': []
         }
         core.save_topology(topo)
-        print(f"Topology initialized: hub-only mode")
+        print("Topology initialized: hub-only mode")
         print(f"WAN Interface: {net_iface} ({selected_ip})")
         if lan_subnets:
             print(f"LAN subnets: {lan_subnets}")
-        
+
         # Generate initial WireGuard config
         hub_wg_path = core.generate_hub_conf(topo, hub_priv)
         print(f"WireGuard hub configuration generated: {hub_wg_path}")
-        
+
     except Exception as e:
         print(f"Error initializing topology: {e}")
         sys.exit(1)
+
 
 def ensure_vpnfw(policy: str = "drop"):
     """
@@ -225,8 +228,8 @@ def ensure_vpnfw(policy: str = "drop"):
         firewall.reset_firewall(policy)
     except Exception:
         # Fallback: create table/chain + baseline directly
-        subprocess.run([nft, "delete", "table", "inet", "vpnfw"], 
-                      check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False)
+        subprocess.run([nft, "delete", "table", "inet", "vpnfw"],
+                       check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False)
         subprocess.run([nft, "add", "table", "inet", "vpnfw"], check=True, shell=False)
         subprocess.run([
             nft, "add", "chain", "inet", "vpnfw", "forward",
@@ -234,8 +237,10 @@ def ensure_vpnfw(policy: str = "drop"):
             "policy", policy, ";", "}"
         ], check=True, shell=False)
         if policy == "drop":
-            subprocess.run([nft, "add", "rule", "inet", "vpnfw", "forward",
-                            "ct", "state", "established,related", "accept"], check=True, shell=False)
+            subprocess.run([
+                nft, "add", "rule", "inet", "vpnfw", "forward",
+                "ct", "state", "established,related", "accept"
+            ], check=True, shell=False)
             subprocess.run([nft, "add", "rule", "inet", "vpnfw", "forward",
                             "ct", "state", "invalid", "drop"], check=True, shell=False)
 
@@ -312,7 +317,7 @@ def cmd_factory_reset_all(app_user: str, username: str, password: str | None):
 
     # 0) ensure perms upfront so following steps can write/read
     ensure_app_permissions(app_user)
-    
+
     # 0.5) run permissions bootstrap (critical for WireGuard capabilities)
     print("[factory-reset] running permissions bootstrap")
     permission_script = APP_DIR / "scripts" / "permission.sh"
@@ -341,7 +346,7 @@ def cmd_factory_reset_all(app_user: str, username: str, password: str | None):
     else:
         print("[factory-reset] detecting network interfaces")
         initialize_topology_interactive(app_user)
-    
+
     # 2.5) fix topology.json ownership (created by core.py as root)
     ensure_app_permissions(app_user)
 
@@ -352,7 +357,7 @@ def cmd_factory_reset_all(app_user: str, username: str, password: str | None):
         print("[factory-reset] password supplied via env/arg")
     else:
         print(f"[factory-reset] temporary password (shown once): {temp_pw}")
-    
+
     # 3.5) initialize nftables baseline (inet:vpnfw, default DROP)
     print("[factory-reset] initializing nftables baseline (inet:vpnfw, DROP)")
     ensure_vpnfw("drop")
@@ -369,7 +374,7 @@ def cmd_factory_reset_all(app_user: str, username: str, password: str | None):
         except Exception as e:
             print(f"[factory-reset] Warning: WireGuard restart failed: {e}")
             print("[factory-reset] Configs generated successfully, manual restart may be needed")
-    
+
     # 6) final permission fix after config generation
     ensure_app_permissions(app_user)
     print("[factory-reset] complete")
@@ -431,4 +436,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
