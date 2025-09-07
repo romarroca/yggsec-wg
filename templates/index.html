@@ -72,14 +72,19 @@
           </button>
         </div>
         {% if topology.hub.interface %}
-          <p><strong>WireGuard Interface:</strong> 
-            <span class="badge bg-info">{{ topology.hub.interface }}</span>
-            {% if topology.hub.interface != "auto-detected" %}
-              <small class="text-muted">- listening UDP 51820</small>
-            {% else %}
-              <small class="text-muted">- Listening on all interfaces, UDP 51820</small>
-            {% endif %}
-          </p>
+          <div class="d-flex align-items-center flex-wrap gap-2">
+            <p class="mb-0"><strong>WireGuard Interface:</strong> 
+              <span class="badge bg-info">{{ topology.hub.interface }}</span>
+              {% if topology.hub.interface != "auto-detected" %}
+                <small class="text-muted">- listening UDP {{ topology.hub.wg_port or 51820 }}</small>
+              {% else %}
+                <small class="text-muted">- Listening on all interfaces, UDP {{ topology.hub.wg_port or 51820 }}</small>
+              {% endif %}
+            </p>
+            <button class="btn btn-sm btn-icon ms-1" data-bs-toggle="modal" data-bs-target="#editWgPortModal" data-bs-toggle="tooltip" data-bs-title="Edit WireGuard port">
+              <i class="bi bi-pencil"></i>
+            </button>
+          </div>
         {% endif %}
         <div class="d-flex align-items-center flex-wrap gap-2">
           <p class="mb-0"><strong>VPN Subnet:</strong> {{ topology.hub.subnet }}</p>
@@ -238,6 +243,32 @@
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-danger">Remove LAN Subnet</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit WireGuard Port -->
+  <div class="modal fade" id="editWgPortModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form method="POST" action="/edit-wg-port" class="modal-content">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="modal-header">
+          <h5 class="modal-title">Edit WireGuard Port</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">WireGuard Port (UDP)</label>
+            <input type="number" class="form-control" name="wg_port" 
+                   value="{{ topology.hub.wg_port or 51820 if topology and topology.hub else 51820 }}" 
+                   min="1024" max="65535" placeholder="e.g. 51820" required>
+            <div class="form-text">⚠️ Changing this will require reconfiguring all clients. Port range: 1024-65535</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-warning">Update WireGuard Port</button>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
         </div>
       </form>

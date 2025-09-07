@@ -791,6 +791,30 @@ def edit_public_ip():
         return redirect(url_for("index"))
 
 
+@app.post("/edit-wg-port")
+@limiter.limit("10 per minute")
+@login_required
+def edit_wg_port():
+    wg_port = (request.form.get("wg_port") or "").strip()
+    if not wg_port:
+        flash("WireGuard port is required", "error")
+        return redirect(url_for("index"))
+
+    try:
+        core.edit_wg_port(wg_port)
+        flash(
+            "WireGuard port updated successfully! Please reconfigure all clients.",
+            "success",
+        )
+        return redirect(url_for("index"))
+    except ValueError as e:
+        flash(str(e), "error")
+        return redirect(url_for("index"))
+    except Exception as e:
+        flash(f"Failed to update WireGuard port: {str(e)}", "error")
+        return redirect(url_for("index"))
+
+
 # -----------------------------
 # Config Management
 # -----------------------------

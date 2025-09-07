@@ -323,6 +323,33 @@ class FirewallValidator:
             raise ValidationError("Port must be a valid integer")
 
     @staticmethod
+    def validate_wg_port(port: Union[str, int]) -> bool:
+        """
+        Validate WireGuard port number (1024-65535 to avoid system ports).
+
+        Args:
+            port: Port number to validate
+
+        Returns:
+            bool: True if valid
+
+        Raises:
+            ValidationError: If port is invalid
+        """
+        if not port and port != 0:
+            raise ValidationError("WireGuard port cannot be empty")
+
+        try:
+            port_num = int(port)
+            if port_num < 1024 or port_num > 65535:
+                raise ValidationError(
+                    "WireGuard port must be between 1024 and 65535 (avoiding system ports)"
+                )
+            return True
+        except (ValueError, TypeError):
+            raise ValidationError("Port must be a valid integer")
+
+    @staticmethod
     def validate_protocol(protocol: str) -> bool:
         """
         Validate network protocol.

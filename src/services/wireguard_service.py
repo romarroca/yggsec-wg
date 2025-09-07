@@ -210,7 +210,7 @@ class WireGuardService:
             config_content = f"""[Interface]
 Address = {hub_addr}
 PrivateKey = {hub_private_key}
-ListenPort = {self.config.WG_PORT}
+ListenPort = {topology["hub"].get("wg_port", self.config.WG_PORT)}
 # Pure nftables; forwarding only.
 PostUp   = sysctl -w net.ipv4.ip_forward=1
 PostDown = :
@@ -309,7 +309,7 @@ PrivateKey = {private_key}
 
 [Peer]
 PublicKey  = {hub_pub}
-Endpoint   = {hub_ip}:{self.config.WG_PORT}
+Endpoint   = {hub_ip}:{topology["hub"].get("wg_port", self.config.WG_PORT)}
 AllowedIPs = {", ".join(allowed)}
 PersistentKeepalive = 25
 """

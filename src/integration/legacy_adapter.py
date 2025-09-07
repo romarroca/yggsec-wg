@@ -108,6 +108,7 @@ from ..core.core import (
     delete_spoke,
     edit_public_ip,
     edit_vpn_subnet,
+    edit_wg_port,
     regenerate_all,
     regenerate_hub_keys,
     regenerate_spoke_keys,

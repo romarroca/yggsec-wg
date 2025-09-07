@@ -202,7 +202,7 @@ def generate_hub_conf(topology: dict, hub_priv: str) -> str:
     cfg = f"""[Interface]
 Address = {hub_addr}
 PrivateKey = {hub_priv}
-ListenPort = {WG_PORT}
+ListenPort = {topology["hub"].get("wg_port", WG_PORT)}
 # Pure nftables; forwarding only.
 PostUp   = sysctl -w net.ipv4.ip_forward=1
 PostDown = :
@@ -251,7 +251,7 @@ PrivateKey = {priv}
 
 [Peer]
 PublicKey  = {hub_pub}
-Endpoint   = {hub_ip}:{WG_PORT}
+Endpoint   = {hub_ip}:{topology["hub"].get("wg_port", WG_PORT)}
 AllowedIPs = {", ".join(allowed)}
 PersistentKeepalive = 25
 """
@@ -361,6 +361,7 @@ def init_topology():
             "public_ip": public_ip,
             "interface": "auto-detected",  # For legacy interactive mode
             "subnet": subnet,
+            "wg_port": 51820,  # Default WireGuard port
             "lan_subnets": hub_lans,
             "public_key": hub_pub,
         },
@@ -386,6 +387,7 @@ def init_topology_with_interface(public_ip: str, interface: str = "auto-detected
             "public_ip": public_ip,
             "interface": interface,
             "subnet": subnet,
+            "wg_port": 51820,  # Default WireGuard port
             "lan_subnets": hub_lans,
             "public_key": hub_pub,
         },
@@ -653,3 +655,27 @@ def edit_public_ip(public_ip: str):
     regenerate_all()
 
     return f"Public IP changed from {old_public_ip} to {public_ip}. All clients must be reconfigured."
+
+
+def edit_wg_port(port: str):
+    """Edit the hub's WireGuard port. This will require all clients to be reconfigured."""
+    from src.core.validators import NetworkValidator
+
+    topo = load_topology()
+    if topo is None:
+        raise ValueError("No topology configuration found")
+
+    # Validate the WireGuard port
+    try:
+        NetworkValidator.validate_wg_port(port)
+    except Exception as e:
+        raise ValueError(f"Invalid WireGuard port: {str(e)}")
+
+    # Update topology
+    old_port = topo["hub"].get("wg_port", 51820)  # Backward compatibility
+    topo["hub"]["wg_port"] = int(port)
+
+    save_topology(topo)
+    regenerate_all()
+
+    return f"WireGuard port changed from {old_port} to {port}. All clients must be reconfigured."
