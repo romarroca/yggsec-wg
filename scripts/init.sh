@@ -445,13 +445,27 @@ echo "[10/10] Status"
 systemctl --no-pager status "$SVC_NAME" || true
 echo "Logs: journalctl -u $SVC_NAME -f"
 
+# Determine web interface access URL for user guidance
+MGMT_IP=$(ip addr show "$MGMT_IFACE" 2>/dev/null | grep -E "inet [0-9]+\." | grep -v "127\." | head -1 | awk '{print $2}' | cut -d'/' -f1)
+if [ -n "$MGMT_IP" ]; then
+    WEB_URL="https://${MGMT_IP}"
+else
+    # Fallback to primary IP if management interface detection fails
+    FALLBACK_IP=$(ip route get 1.1.1.1 2>/dev/null | grep -oP 'src \K\S+' | head -1)
+    WEB_URL="https://${FALLBACK_IP:-YOUR_SERVER_IP}"
+fi
+
 echo ""
 echo "============================================================"
 echo "[OK] YggSec installation completed successfully!"
 echo "============================================================"
 echo "Installation finished without interruption"
 echo "Installation directory: $APP_DIR"
-echo "Web interface will be available after setup"
+echo ""
+echo "🌐 WEB INTERFACE ACCESS:"
+echo "   URL: $WEB_URL"
+echo "   Port: 443 (HTTPS)"
+echo "   Status: Ready after application setup"
 echo ""
 echo "NEXT STEPS:"
 echo "1. Complete YggSec application setup:"
@@ -460,6 +474,10 @@ echo "     $VENV_DIR/bin/python $APP_DIR/scripts/yggsec_setup.py factory-reset-a
 echo ""
 echo "2. Or run interactively:"
 echo "   sudo $VENV_DIR/bin/python $APP_DIR/scripts/yggsec_setup.py factory-reset-all --app-user $APP_USER"
+echo ""
+echo "3. Access web interface:"
+echo "   Open: $WEB_URL"
+echo "   Login with the credentials you set during setup"
 echo ""
 echo "MAINTENANCE COMMANDS:"
 echo "  - Reset admin only: sudo $VENV_DIR/bin/python $APP_DIR/scripts/yggsec_setup.py factory-reset"
