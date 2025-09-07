@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}YggSec · 2FA Verification{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-5 col-lg-4">
+    <div class="card shadow-soft">
+      <div class="card-header fw-bold">
+        <i class="bi bi-shield-lock"></i> Two-Factor Authentication
+      </div>
+      <div class="card-body">
+        <p class="text-muted mb-3">
+          Welcome <strong>{{ username }}</strong>. Please enter your 6-digit code from Google Authenticator to complete sign in.
+        </p>
+        
+        <!-- TOTP Code Form -->
+        <form method="POST" action="{{ url_for('login') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <input type="hidden" name="username" value="{{ username }}"/>
+          <input type="hidden" name="password" value="verified"/>
+          
+          <div class="mb-3">
+            <label class="form-label">Authentication Code</label>
+            <input 
+              name="totp_token" 
+              class="form-control text-center" 
+              placeholder="000000"
+              maxlength="6"
+              pattern="[0-9]{6}"
+              autocomplete="one-time-code"
+              autofocus
+              required>
+            <div class="form-text">Enter the 6-digit code from your authenticator app</div>
+          </div>
+          
+          <button class="btn btn-primary w-100 mb-3" type="submit">
+            <i class="bi bi-unlock-fill"></i> Verify & Sign In
+          </button>
+        </form>
+        
+        <!-- Backup Code Form -->
+        <div class="text-center">
+          <button class="btn btn-link btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#backupCodeForm">
+            Lost your device? Use backup code
+          </button>
+        </div>
+        
+        <div class="collapse mt-3" id="backupCodeForm">
+          <hr>
+          <form method="POST" action="{{ url_for('login') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <input type="hidden" name="username" value="{{ username }}"/>
+            <input type="hidden" name="password" value="verified"/>
+            
+            <div class="mb-3">
+              <label class="form-label">Backup Code</label>
+              <input 
+                name="backup_code" 
+                class="form-control text-center" 
+                placeholder="XXXXXXXX"
+                maxlength="8"
+                pattern="[A-Z0-9]{8}"
+                style="text-transform: uppercase;"
+                required>
+              <div class="form-text">Enter one of your 8-character backup codes</div>
+            </div>
+            
+            <button class="btn btn-warning w-100" type="submit">
+              <i class="bi bi-key-fill"></i> Use Backup Code
+            </button>
+          </form>
+        </div>
+        
+        <!-- Cancel -->
+        <div class="text-center mt-3">
+          <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Login
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Auto-format TOTP input
+document.querySelector('input[name="totp_token"]').addEventListener('input', function(e) {
+  // Only allow numbers
+  this.value = this.value.replace(/[^0-9]/g, '');
+});
+
+// Auto-format backup code input
+const backupInput = document.querySelector('input[name="backup_code"]');
+if (backupInput) {
+  backupInput.addEventListener('input', function(e) {
+    // Only allow alphanumeric, convert to uppercase
+    this.value = this.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+  });
+}
+</script>
+{% endblock %}

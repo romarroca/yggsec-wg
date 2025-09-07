@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}YggSec · Backup Codes{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow-soft">
+      <div class="card-header fw-bold">
+        <i class="bi bi-key-fill"></i> Two-Factor Authentication Backup Codes
+      </div>
+      <div class="card-body">
+        
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <strong>Important:</strong> Save these backup codes in a secure location. 
+          Each code can only be used once to sign in if you lose access to your authenticator app.
+        </div>
+        
+        {% if backup_codes %}
+        <div class="backup-codes-container">
+          <div class="row g-2 mb-4">
+            {% for code in backup_codes %}
+            <div class="col-md-6">
+              <div class="backup-code-item p-3 bg-light rounded border text-center">
+                <code class="fs-5 fw-bold text-dark">{{ code }}</code>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          
+          <!-- Print/Download Options -->
+          <div class="d-grid gap-2 mb-4">
+            <button class="btn btn-outline-primary" onclick="window.print()">
+              <i class="bi bi-printer"></i> Print Backup Codes
+            </button>
+            
+            <button class="btn btn-outline-secondary" onclick="downloadBackupCodes()">
+              <i class="bi bi-download"></i> Download as Text File
+            </button>
+            
+            <button class="btn btn-outline-info" onclick="copyAllCodes()">
+              <i class="bi bi-clipboard"></i> Copy All to Clipboard
+            </button>
+          </div>
+          
+          <!-- Security Tips -->
+          <div class="card bg-light">
+            <div class="card-body">
+              <h6 class="card-title text-primary">
+                <i class="bi bi-shield-check"></i> Security Tips
+              </h6>
+              <ul class="card-text small text-muted mb-0">
+                <li>Store these codes in a secure password manager</li>
+                <li>Print a copy and store it in a safe place</li>
+                <li>Each code can only be used once</li>
+                <li>Generate new codes if you suspect they're compromised</li>
+                <li>Don't share these codes with anyone</li>
+              </ul>
+            </div>
+          </div>
+          
+          <hr class="my-4">
+          
+          <!-- Regenerate Warning -->
+          <div class="alert alert-danger">
+            <i class="bi bi-exclamation-octagon-fill me-2"></i>
+            <strong>Warning:</strong> Regenerating backup codes will invalidate all current codes.
+          </div>
+          
+          <form method="POST" action="{{ url_for('regenerate_backup_codes') }}" class="d-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="btn btn-danger w-100" onclick="return confirm('This will invalidate all existing backup codes. Make sure you have saved the current codes first. Continue?')">
+              <i class="bi bi-arrow-clockwise"></i> Generate New Backup Codes
+            </button>
+          </form>
+          
+        {% else %}
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            No backup codes available. This usually means 2FA is not enabled on your account.
+          </div>
+        {% endif %}
+        
+        <!-- Navigation -->
+        <div class="text-center mt-4">
+          <a href="{{ url_for('account_2fa') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to 2FA Settings
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function copyAllCodes() {
+  const codes = [{% for code in backup_codes %}'{{ code }}'{% if not loop.last %},{% endif %}{% endfor %}];
+  const codesText = codes.join('\n');
+  
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(codesText).then(function() {
+      alert('Backup codes copied to clipboard!');
+    }).catch(function(err) {
+      console.error('Failed to copy: ', err);
+      fallbackCopy(codesText);
+    });
+  } else {
+    fallbackCopy(codesText);
+  }
+}
+
+function fallbackCopy(text) {
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.style.position = 'fixed';
+  textArea.style.opacity = '0';
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  
+  try {
+    document.execCommand('copy');
+    alert('Backup codes copied to clipboard!');
+  } catch (err) {
+    alert('Failed to copy backup codes. Please copy them manually.');
+  }
+  
+  document.body.removeChild(textArea);
+}
+
+function downloadBackupCodes() {
+  const codes = [{% for code in backup_codes %}'{{ code }}'{% if not loop.last %},{% endif %}{% endfor %}];
+  const content = `YggSec Two-Factor Authentication Backup Codes
+Generated: ${new Date().toLocaleString()}
+
+IMPORTANT: Each code can only be used once to sign in if you lose access to your authenticator app.
+Store these codes in a secure location.
+
+${codes.join('\n')}
+
+Security Tips:
+- Store these codes in a secure password manager
+- Print a copy and store it in a safe place  
+- Each code can only be used once
+- Generate new codes if you suspect they're compromised
+- Don't share these codes with anyone`;
+
+  const blob = new Blob([content], { type: 'text/plain' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = url;
+  a.download = 'yggsec-backup-codes.txt';
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+</script>
+
+<style>
+@media print {
+  .btn, .alert, .card-header, nav, footer {
+    display: none !important;
+  }
+  
+  .backup-code-item {
+    border: 2px solid #000 !important;
+    background: white !important;
+    page-break-inside: avoid;
+  }
+  
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+  }
+  
+  body {
+    font-size: 12pt;
+  }
+  
+  .backup-codes-container::before {
+    content: "YggSec Two-Factor Authentication Backup Codes\A Generated: " attr(data-date) "\A\A IMPORTANT: Each code can only be used once. Store securely.\A\A";
+    white-space: pre;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 20px;
+  }
+}
+</style>
+{% endblock %}

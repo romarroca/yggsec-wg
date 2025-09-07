@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}YggSec · 2FA Settings{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow-soft">
+      <div class="card-header fw-bold">
+        <i class="bi bi-shield-lock"></i> Two-Factor Authentication
+      </div>
+      <div class="card-body">
+        
+        {% if status.enabled %}
+          <!-- 2FA is enabled -->
+          <div class="alert alert-success">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            Two-factor authentication is <strong>enabled</strong> for your account.
+          </div>
+          
+          <div class="row mb-4">
+            <div class="col-sm-4">
+              <strong>Status:</strong>
+            </div>
+            <div class="col-sm-8">
+              <span class="badge bg-success">Active</span>
+            </div>
+          </div>
+          
+          <div class="row mb-4">
+            <div class="col-sm-4">
+              <strong>Backup Codes:</strong>
+            </div>
+            <div class="col-sm-8">
+              <span class="badge bg-info">{{ status.backup_codes_count }} remaining</span>
+            </div>
+          </div>
+          
+          <!-- Management Actions -->
+          <div class="d-grid gap-2">
+            <a href="{{ url_for('view_backup_codes') }}" class="btn btn-outline-primary">
+              <i class="bi bi-key"></i> View Backup Codes
+            </a>
+            
+            <form method="POST" action="{{ url_for('regenerate_backup_codes') }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button type="submit" class="btn btn-outline-warning w-100" onclick="return confirm('This will invalidate all existing backup codes. Continue?')">
+                <i class="bi bi-arrow-clockwise"></i> Regenerate Backup Codes
+              </button>
+            </form>
+            
+            <hr class="my-4">
+            
+            <form method="POST" action="{{ url_for('disable_2fa') }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+              <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('This will disable 2FA protection. Are you sure?')">
+                <i class="bi bi-shield-x"></i> Disable 2FA
+              </button>
+            </form>
+          </div>
+          
+        {% else %}
+          <!-- 2FA is not enabled -->
+          <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Two-factor authentication is <strong>not enabled</strong> for your account.
+          </div>
+          
+          <p class="text-muted mb-4">
+            Adding two-factor authentication provides an extra layer of security to your account. 
+            You'll need an authenticator app like Google Authenticator, Authy, or 1Password.
+          </p>
+          
+          <div class="d-grid">
+            <a href="{{ url_for('setup_2fa') }}" class="btn btn-primary">
+              <i class="bi bi-shield-plus"></i> Enable Two-Factor Authentication
+            </a>
+          </div>
+        {% endif %}
+        
+        <!-- Back to Account -->
+        <div class="text-center mt-4">
+          <a href="{{ url_for('account') }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Account
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -24,6 +24,7 @@ from src.core import firewall
 from src.core import monitor
 from src.core.firewall import persist_vpnfw_table
 from src.utils.error_handler import handle_api_error, ErrorHandler
+from src.services.totp_service import TOTPService
 
 app = Flask(__name__, template_folder='../../templates', static_folder='../../static')
 app.secret_key = os.environ["SECRET_KEY"]
@@ -46,6 +47,9 @@ limiter = Limiter(
     default_limits=["100 per hour"]
 )
 limiter.init_app(app)
+
+# Initialize TOTP service
+totp_service = TOTPService()
 
 # -----------------------------
 # Admin store (JSON; env is first-boot fallback)
@@ -237,17 +241,65 @@ def login():
     if request.method == "POST":
         username = (request.form.get("username") or "").strip()
         password = request.form.get("password") or ""
-        if verify_admin(username, password):
-            session["user"] = username
-            session.permanent = True  # Enable permanent session for sliding expiration
-            flash("Signed in.", "success")
-            dest = request.args.get("next") or url_for("index")
-            # Proper open-redirect protection
-            parsed = urlparse(dest)
-            if parsed.netloc or not dest.startswith('/') or dest.startswith('//'):
-                dest = url_for("index")
-            return redirect(dest)
-        flash("Invalid username or password.", "error")
+        totp_token = (request.form.get("totp_token") or "").strip()
+        backup_code = (request.form.get("backup_code") or "").strip()
+        
+        # Step 1: Verify username/password OR check pending 2FA
+        pending_user = session.get("pending_2fa_user")
+        if verify_admin(username, password) or (password == "verified" and pending_user == username):
+            # Step 2: Check if 2FA is enabled
+            if totp_service.is_2fa_enabled(username):
+                # 2FA is enabled - require TOTP token or backup code
+                if totp_token:
+                    if totp_service.verify_token(username, totp_token):
+                        # Valid TOTP token - complete login
+                        session["user"] = username
+                        session.permanent = True
+                        session.pop("pending_2fa_user", None)  # Clear pending state
+                        flash("Signed in with 2FA.", "success")
+                        dest = request.args.get("next") or url_for("index")
+                        # Proper open-redirect protection
+                        parsed = urlparse(dest)
+                        if parsed.netloc or not dest.startswith('/') or dest.startswith('//'):
+                            dest = url_for("index")
+                        return redirect(dest)
+                    else:
+                        flash("Invalid 2FA code.", "error")
+                elif backup_code:
+                    if totp_service.verify_backup_code(username, backup_code):
+                        # Valid backup code - complete login
+                        session["user"] = username
+                        session.permanent = True
+                        session.pop("pending_2fa_user", None)  # Clear pending state
+                        flash("Signed in with backup code.", "warning")
+                        dest = request.args.get("next") or url_for("index")
+                        # Proper open-redirect protection
+                        parsed = urlparse(dest)
+                        if parsed.netloc or not dest.startswith('/') or dest.startswith('//'):
+                            dest = url_for("index")
+                        return redirect(dest)
+                    else:
+                        flash("Invalid backup code.", "error")
+                else:
+                    # Store temporary auth state and show 2FA form
+                    session["pending_2fa_user"] = username
+                    return render_template("login_2fa.html", username=username)
+            else:
+                # No 2FA enabled - complete login
+                session["user"] = username
+                session.permanent = True
+                flash("Signed in.", "success")
+                dest = request.args.get("next") or url_for("index")
+                # Proper open-redirect protection
+                parsed = urlparse(dest)
+                if parsed.netloc or not dest.startswith('/') or dest.startswith('//'):
+                    dest = url_for("index")
+                return redirect(dest)
+        else:
+            flash("Invalid username or password.", "error")
+    
+    # Clear any pending 2FA state
+    session.pop("pending_2fa_user", None)
     return render_template("login.html")
 
 @app.route("/logout")
@@ -307,6 +359,131 @@ def account_change_password():
         user_message, correlation_id = handle_api_error(e, "updating password")
         flash(f"{user_message} (ID: {correlation_id})", "error")
         return redirect(url_for("account"))
+
+# --------------------------
+# 2FA Management Routes
+# --------------------------
+@app.route("/account/2fa")
+@login_required
+def account_2fa():
+    """2FA management page"""
+    user = current_user()
+    if not user:
+        return redirect(url_for("login"))
+    
+    username = user["username"]
+    status = totp_service.get_user_2fa_status(username)
+    
+    return render_template("account_2fa.html", user=user, status=status)
+
+@app.route("/account/2fa/setup", methods=["GET", "POST"])
+@login_required
+def setup_2fa():
+    """Setup 2FA for user"""
+    user = current_user()
+    if not user:
+        return redirect(url_for("login"))
+    
+    username = user["username"]
+    
+    if request.method == "POST":
+        verification_code = (request.form.get("verification_code") or "").strip()
+        
+        if totp_service.enable_2fa(username, verification_code):
+            flash("2FA has been enabled successfully!", "success")
+            return redirect(url_for("account_2fa"))
+        else:
+            flash("Invalid verification code. Please try again.", "error")
+    
+    # Generate secret if not exists
+    if not totp_service.get_secret(username):
+        totp_service.generate_secret(username)
+    
+    return render_template("setup_2fa.html", user=user)
+
+@app.route("/account/2fa/qr")
+@login_required
+def get_2fa_qr():
+    """Generate QR code for 2FA setup"""
+    user = current_user()
+    if not user:
+        return redirect(url_for("login"))
+    
+    try:
+        username = user["username"]
+        qr_image = totp_service.generate_qr_code(username)
+        
+        from flask import Response
+        return Response(qr_image, mimetype='image/png')
+    except Exception as e:
+        user_message, correlation_id = handle_api_error(e, "generating QR code")
+        flash(f"{user_message} (ID: {correlation_id})", "error")
+        return redirect(url_for("setup_2fa"))
+
+@app.route("/account/2fa/disable", methods=["POST"])
+@login_required
+def disable_2fa():
+    """Disable 2FA for user"""
+    user = current_user()
+    if not user:
+        return redirect(url_for("login"))
+    
+    # Verify current password for security
+    current_password = request.form.get("current_password") or ""
+    if not verify_admin(user["username"], current_password):
+        flash("Current password is incorrect.", "error")
+        return redirect(url_for("account_2fa"))
+    
+    if totp_service.disable_2fa(user["username"]):
+        flash("2FA has been disabled.", "warning")
+    else:
+        flash("Failed to disable 2FA.", "error")
+    
+    return redirect(url_for("account_2fa"))
+
+@app.route("/account/2fa/backup-codes")
+@login_required
+def view_backup_codes():
+    """View backup codes"""
+    user = current_user()
+    if not user:
+        return redirect(url_for("login"))
+    
+    username = user["username"]
+    if not totp_service.is_2fa_enabled(username):
+        flash("2FA is not enabled.", "error")
+        return redirect(url_for("account_2fa"))
+    
+    backup_codes = totp_service.get_backup_codes(username)
+    return render_template("backup_codes.html", user=user, backup_codes=backup_codes)
+
+@app.route("/account/2fa/regenerate-backup-codes", methods=["POST"])
+@login_required
+def regenerate_backup_codes():
+    """Regenerate backup codes"""
+    user = current_user()
+    if not user:
+        return redirect(url_for("login"))
+    
+    username = user["username"]
+    if not totp_service.is_2fa_enabled(username):
+        flash("2FA is not enabled.", "error")
+        return redirect(url_for("account_2fa"))
+    
+    # Verify current password for security
+    current_password = request.form.get("current_password") or ""
+    if not verify_admin(username, current_password):
+        flash("Current password is incorrect.", "error")
+        return redirect(url_for("account_2fa"))
+    
+    try:
+        new_codes = totp_service.regenerate_backup_codes(username)
+        flash("New backup codes generated. Please save them securely.", "success")
+        return render_template("backup_codes.html", user=user, backup_codes=new_codes, regenerated=True)
+    except Exception as e:
+        user_message, correlation_id = handle_api_error(e, "regenerating backup codes")
+        flash(f"{user_message} (ID: {correlation_id})", "error")
+        return redirect(url_for("account_2fa"))
 
 # --------------------------
 # Monitor Page

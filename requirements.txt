@@ -9,3 +9,7 @@ flask-wtf==1.2.1
 flask-limiter==3.5.0
 redis==5.0.1
 
+# 2FA dependencies
+pyotp==2.9.0
+qrcode[pil]==7.4.2
+

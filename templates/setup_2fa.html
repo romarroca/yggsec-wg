@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}YggSec · Setup 2FA{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow-soft">
+      <div class="card-header fw-bold">
+        <i class="bi bi-shield-plus"></i> Setup Two-Factor Authentication
+      </div>
+      <div class="card-body">
+        
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle-fill me-2"></i>
+          Follow these steps to enable two-factor authentication on your account.
+        </div>
+        
+        <!-- Step 1: Install App -->
+        <div class="setup-step mb-4">
+          <h5 class="fw-bold text-primary">
+            <span class="badge bg-primary me-2">1</span>
+            Install Authenticator App
+          </h5>
+          <p class="text-muted mb-2">
+            Download and install an authenticator app on your mobile device:
+          </p>
+          <ul class="text-muted">
+            <li><strong>Google Authenticator</strong> (iOS/Android)</li>
+            <li><strong>Authy</strong> (iOS/Android/Desktop)</li>
+            <li><strong>1Password</strong> (iOS/Android)</li>
+            <li><strong>Microsoft Authenticator</strong> (iOS/Android)</li>
+          </ul>
+        </div>
+        
+        <!-- Step 2: Scan QR Code -->
+        <div class="setup-step mb-4">
+          <h5 class="fw-bold text-primary">
+            <span class="badge bg-primary me-2">2</span>
+            Scan QR Code
+          </h5>
+          <p class="text-muted mb-3">
+            Open your authenticator app and scan this QR code:
+          </p>
+          
+          <div class="text-center mb-3">
+            <div id="qr-container" class="d-inline-block border rounded p-3 bg-white">
+              <img src="{{ url_for('get_2fa_qr') }}" alt="2FA QR Code" class="img-fluid" style="max-width: 200px;">
+            </div>
+          </div>
+          
+          <div class="text-center">
+            <button class="btn btn-outline-secondary btn-sm" onclick="window.location.reload()">
+              <i class="bi bi-arrow-clockwise"></i> Refresh QR Code
+            </button>
+          </div>
+        </div>
+        
+        <!-- Step 3: Verify Code -->
+        <div class="setup-step mb-4">
+          <h5 class="fw-bold text-primary">
+            <span class="badge bg-primary me-2">3</span>
+            Verify Setup
+          </h5>
+          <p class="text-muted mb-3">
+            Enter the 6-digit code from your authenticator app to complete setup:
+          </p>
+          
+          <form method="POST" action="{{ url_for('setup_2fa') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            
+            <div class="mb-3">
+              <input 
+                name="verification_code" 
+                class="form-control form-control-lg text-center" 
+                placeholder="000000"
+                maxlength="6"
+                pattern="[0-9]{6}"
+                autocomplete="one-time-code"
+                autofocus
+                required>
+              <div class="form-text">This code changes every 30 seconds</div>
+            </div>
+            
+            <button class="btn btn-success btn-lg w-100" type="submit">
+              <i class="bi bi-shield-check"></i> Enable Two-Factor Authentication
+            </button>
+          </form>
+        </div>
+        
+        <!-- Important Notes -->
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle-fill me-2"></i>
+          <strong>Important:</strong> After enabling 2FA, you'll receive backup codes for account recovery. 
+          Save them in a secure location - you'll need them if you lose access to your authenticator app.
+        </div>
+        
+        <!-- Cancel -->
+        <div class="text-center mt-4">
+          <a href="{{ url_for('account_2fa') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Cancel Setup
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Auto-format verification code input
+document.querySelector('input[name="verification_code"]').addEventListener('input', function(e) {
+  // Only allow numbers
+  this.value = this.value.replace(/[^0-9]/g, '');
+});
+
+// Auto-submit when 6 digits entered
+document.querySelector('input[name="verification_code"]').addEventListener('input', function(e) {
+  if (this.value.length === 6) {
+    // Small delay to allow user to see the complete code
+    setTimeout(() => {
+      if (this.value.length === 6) {
+        this.form.submit();
+      }
+    }, 500);
+  }
+});
+</script>
+{% endblock %}
