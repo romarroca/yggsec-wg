@@ -67,18 +67,14 @@ class LegacyAdapter:
         try:
             return self.wg_service.generate_hub_config(topology, hub_priv)
         except YggSecError as e:
-            raise RuntimeError(
-                str(e)
-            )  # Convert to RuntimeError for legacy compatibility
+            raise RuntimeError(str(e))  # Convert to RuntimeError for legacy compatibility
 
     def generate_spoke_conf(self, name, spoke, topology):
         """Generate spoke config - legacy interface"""
         try:
             return self.wg_service.generate_spoke_config(name, spoke, topology)
         except YggSecError as e:
-            raise RuntimeError(
-                str(e)
-            )  # Convert to RuntimeError for legacy compatibility
+            raise RuntimeError(str(e))  # Convert to RuntimeError for legacy compatibility
 
     def restart_full(self, wg_conf_path):
         """Restart interface - legacy interface"""
@@ -102,9 +98,9 @@ generate_spoke_conf = _adapter.generate_spoke_conf
 restart_full = _adapter.restart_full
 
 # Import missing functions from core.py that aren't in the adapter yet
-from ..core.core import (  # noqa: F401, E402
+from ..core.core import add_spoke  # noqa: F401, E402
+from ..core.core import (
     add_hub_lan,
-    add_spoke,
     delete_spoke,
     edit_vpn_subnet,
     regenerate_all,

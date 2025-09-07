@@ -164,9 +164,7 @@ def generate_nft_config_from_json(nft_data):
 
             if chain_type and hook:
                 config_lines.append(f"  chain {name} {{")
-                config_lines.append(
-                    f"    type {chain_type} hook {hook} priority {prio};"
-                )
+                config_lines.append(f"    type {chain_type} hook {hook} priority {prio};")
                 if policy:
                     config_lines.append(f"    policy {policy};")
 
@@ -327,9 +325,7 @@ def test_json_config_parsing():
             print("Generated config preview:")
             print("-" * 40)
             print(
-                generated_config[:500] + "..."
-                if len(generated_config) > 500
-                else generated_config
+                generated_config[:500] + "..." if len(generated_config) > 500 else generated_config
             )
             print("-" * 40)
         else:
@@ -466,9 +462,7 @@ def _flush_all_conntrack():
     This ensures fresh start with no lingering connections.
     """
     try:
-        result = run_priv(
-            ["conntrack", "-F"], check=False, capture_output=True, text=True
-        )
+        result = run_priv(["conntrack", "-F"], check=False, capture_output=True, text=True)
 
         if result.returncode == 0:
             print("✅ All connection tracking entries cleared")
@@ -826,13 +820,9 @@ def _flush_conntrack_for_rule(rule_info):
                 # Count deleted entries from stdout
                 deleted_count = result.stdout.strip()
                 if deleted_count.isdigit() and int(deleted_count) > 0:
-                    print(
-                        f"✅ Cleared {deleted_count} connection tracking entries for rule"
-                    )
+                    print(f"✅ Cleared {deleted_count} connection tracking entries for rule")
                 else:
-                    print(
-                        "✅ Connection tracking cleanup completed (no active connections)"
-                    )
+                    print("✅ Connection tracking cleanup completed (no active connections)")
             else:
                 # Return code 1 usually means "no matching entries found" - this is normal
                 if "No such file or directory" not in (result.stderr or ""):

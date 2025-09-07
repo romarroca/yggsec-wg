@@ -50,11 +50,7 @@ def load_topology():
     try:
         with open(CFG_FILE, "r") as f:
             data = json.load(f)
-        return (
-            data
-            if isinstance(data, dict) and "hub" in data and "spokes" in data
-            else None
-        )
+        return data if isinstance(data, dict) and "hub" in data and "spokes" in data else None
     except (FileNotFoundError, JSONDecodeError):
         return None
 
@@ -331,17 +327,13 @@ def init_topology():
     ensure_dirs()
 
     # Get and validate VPN subnet
-    subnet_input = (
-        input("Enter VPN subnet [default 10.250.250.0/24]: ") or "10.250.250.0/24"
-    )
+    subnet_input = input("Enter VPN subnet [default 10.250.250.0/24]: ") or "10.250.250.0/24"
     subnet = subnet_input.strip()
     if not _valid_cidr(subnet):
         raise ValueError(f"Invalid VPN subnet: {subnet}")
 
     # Get and validate hub LAN subnets
-    lans_input = (
-        input("Enter hub LAN subnets (comma-separated, leave empty if none): ") or ""
-    )
+    lans_input = input("Enter hub LAN subnets (comma-separated, leave empty if none): ") or ""
     hub_lans = []
     if lans_input.strip():
         for lan in lans_input.split(","):
@@ -628,4 +620,6 @@ def edit_vpn_subnet(vpn_subnet: str):
     save_topology(topo)
     regenerate_all()
 
-    return f"VPN subnet changed from {old_subnet} to {vpn_subnet}. All clients must be reconfigured."
+    return (
+        f"VPN subnet changed from {old_subnet} to {vpn_subnet}. All clients must be reconfigured."
+    )

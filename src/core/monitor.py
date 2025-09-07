@@ -225,9 +225,7 @@ def get_ips_seen(limit=20):
     # quick “services seen” hint from conntrack dports
     top_ports = []
     for port, c in dst_ports.most_common(10):
-        top_ports.append(
-            {"port": port, "service": KNOWN_SERVICES.get(port, "Unknown"), "flows": c}
-        )
+        top_ports.append({"port": port, "service": KNOWN_SERVICES.get(port, "Unknown"), "flows": c})
 
     return {
         "sources": top_src,

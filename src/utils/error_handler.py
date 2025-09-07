@@ -159,9 +159,7 @@ class ErrorHandler:
         return sanitized
 
     @classmethod
-    def _create_log_message(
-        cls, error: Exception, context: str, correlation_id: str
-    ) -> str:
+    def _create_log_message(cls, error: Exception, context: str, correlation_id: str) -> str:
         """Create detailed log message for internal debugging"""
         error_type = type(error).__name__
         error_msg = str(error)
@@ -209,9 +207,7 @@ def handle_api_error(error: Exception, operation: str = None) -> Tuple[str, str]
     return ErrorHandler.handle_error(error, context, operation, sanitize=True)
 
 
-def handle_service_error(
-    error: Exception, service: str, operation: str = None
-) -> Tuple[str, str]:
+def handle_service_error(error: Exception, service: str, operation: str = None) -> Tuple[str, str]:
     """
     Convenience function for service layer error handling
 

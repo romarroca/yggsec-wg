@@ -11,12 +11,7 @@ from .exceptions import (
     WireGuardError,
     YggSecError,
 )
-from .validators import (
-    AuthValidator,
-    FirewallValidator,
-    NetworkValidator,
-    WireGuardValidator,
-)
+from .validators import AuthValidator, FirewallValidator, NetworkValidator, WireGuardValidator
 
 __all__ = [
     "YggSecError",

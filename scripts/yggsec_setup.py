@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 # yggsec_setup.py
-import os
-import sys
 import json
+import os
 import secrets
 import shutil
 import subprocess
-from pathlib import Path
+import sys
 from argparse import ArgumentParser
-from werkzeug.security import generate_password_hash
+from pathlib import Path
 
 import netifaces
+from werkzeug.security import generate_password_hash
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from src.core import core  # uses utils.run_priv internally
 
 APP_DIR = Path(__file__).resolve().parent.parent
@@ -78,13 +78,15 @@ def write_admin(username: str, password: str | None, app_user: str):
     user = (username or "administrator").strip()
     plain = password or secrets.token_urlsafe(32)
     data = {
-        "admins": [{
-            "username": user,
-            "first_name": "Admin",
-            "last_name": "User",
-            "password_hash": generate_password_hash(plain),
-            "must_change": True,
-        }]
+        "admins": [
+            {
+                "username": user,
+                "first_name": "Admin",
+                "last_name": "User",
+                "password_hash": generate_password_hash(plain),
+                "must_change": True,
+            }
+        ]
     }
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     ADMINS_FILE.write_text(json.dumps(data, indent=2))
@@ -104,7 +106,7 @@ def get_network_interfaces():
         try:
             addrs = netifaces.ifaddresses(iface)
             ipv4_addrs = addrs.get(netifaces.AF_INET, [])
-            ip = ipv4_addrs[0]['addr'] if ipv4_addrs else "no IP"
+            ip = ipv4_addrs[0]["addr"] if ipv4_addrs else "no IP"
             interfaces.append((iface, ip))
         except (KeyError, IndexError):
             interfaces.append((iface, "no IP"))
@@ -141,7 +143,9 @@ def initialize_topology_interactive(app_user: str):
     # Handle case where interface has no IP yet
     if selected_ip == "no IP":
         try:
-            selected_ip = input(f"Interface {net_iface} has no IP. Enter expected public IP: ").strip()
+            selected_ip = input(
+                f"Interface {net_iface} has no IP. Enter expected public IP: "
+            ).strip()
             if not selected_ip:
                 selected_ip = "127.0.0.1"
         except KeyboardInterrupt:
@@ -155,7 +159,7 @@ def initialize_topology_interactive(app_user: str):
     except KeyboardInterrupt:
         print("\nSetup cancelled by user.")
         sys.exit(1)
-    if cfg_lan.startswith('y'):
+    if cfg_lan.startswith("y"):
         while True:
             try:
                 lidx = int(input(f"Select LAN interface index (not {net_iface}): "))
@@ -174,17 +178,17 @@ def initialize_topology_interactive(app_user: str):
 
     # Create topology with detected interface
     try:
-        hub_priv, hub_pub = core.gen_keypair('hub')
+        hub_priv, hub_pub = core.gen_keypair("hub")
         topo = {
-            'mode': 'hub-only',
-            'hub': {
-                'public_ip': selected_ip,
-                'interface': net_iface,
-                'subnet': '10.250.250.0/24',
-                'lan_subnets': lan_subnets,
-                'public_key': hub_pub
+            "mode": "hub-only",
+            "hub": {
+                "public_ip": selected_ip,
+                "interface": net_iface,
+                "subnet": "10.250.250.0/24",
+                "lan_subnets": lan_subnets,
+                "public_key": hub_pub,
             },
-            'spokes': []
+            "spokes": [],
         }
         core.save_topology(topo)
         print("Topology initialized: hub-only mode")
@@ -225,28 +229,84 @@ def ensure_vpnfw(policy: str = "drop"):
     # Try to use firewall.py if available
     try:
         import firewall
+
         firewall.reset_firewall(policy)
     except Exception:
         # Fallback: create table/chain + baseline directly
-        subprocess.run([nft, "delete", "table", "inet", "vpnfw"],
-                       check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False)
+        subprocess.run(
+            [nft, "delete", "table", "inet", "vpnfw"],
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            shell=False,
+        )
         subprocess.run([nft, "add", "table", "inet", "vpnfw"], check=True, shell=False)
-        subprocess.run([
-            nft, "add", "chain", "inet", "vpnfw", "forward",
-            "{", "type", "filter", "hook", "forward", "priority", "0", ";",
-            "policy", policy, ";", "}"
-        ], check=True, shell=False)
+        subprocess.run(
+            [
+                nft,
+                "add",
+                "chain",
+                "inet",
+                "vpnfw",
+                "forward",
+                "{",
+                "type",
+                "filter",
+                "hook",
+                "forward",
+                "priority",
+                "0",
+                ";",
+                "policy",
+                policy,
+                ";",
+                "}",
+            ],
+            check=True,
+            shell=False,
+        )
         if policy == "drop":
-            subprocess.run([
-                nft, "add", "rule", "inet", "vpnfw", "forward",
-                "ct", "state", "established,related", "accept"
-            ], check=True, shell=False)
-            subprocess.run([nft, "add", "rule", "inet", "vpnfw", "forward",
-                            "ct", "state", "invalid", "drop"], check=True, shell=False)
+            subprocess.run(
+                [
+                    nft,
+                    "add",
+                    "rule",
+                    "inet",
+                    "vpnfw",
+                    "forward",
+                    "ct",
+                    "state",
+                    "established,related",
+                    "accept",
+                ],
+                check=True,
+                shell=False,
+            )
+            subprocess.run(
+                [
+                    nft,
+                    "add",
+                    "rule",
+                    "inet",
+                    "vpnfw",
+                    "forward",
+                    "ct",
+                    "state",
+                    "invalid",
+                    "drop",
+                ],
+                check=True,
+                shell=False,
+            )
 
     # Persist current ruleset to /etc/nftables.d/vpnfw.nft
-    out = subprocess.run([nft, "-s", "list", "table", "inet", "vpnfw"],
-                         check=True, capture_output=True, text=True, shell=False).stdout
+    out = subprocess.run(
+        [nft, "-s", "list", "table", "inet", "vpnfw"],
+        check=True,
+        capture_output=True,
+        text=True,
+        shell=False,
+    ).stdout
     Path("/etc/nftables.d/vpnfw.nft").write_text(out)
 
     # Load from main and enable service (if systemd exists)
@@ -334,14 +394,18 @@ def cmd_factory_reset_all(app_user: str, username: str, password: str | None):
     if old_topology and "hub" in old_topology:
         preserved_public_ip = old_topology["hub"].get("public_ip")
         preserved_interface = old_topology["hub"].get("interface", "auto-detected")
-        print(f"[factory-reset] preserving interface: {preserved_interface} ({preserved_public_ip})")
+        print(
+            f"[factory-reset] preserving interface: {preserved_interface} ({preserved_public_ip})"
+        )
 
     # 2) wipe app state (configs/keys/topology.json)
     core.wipe_state()
 
     # 3) interactive topology initialization with interface detection
     if preserved_public_ip:
-        print(f"[factory-reset] using preserved interface: {preserved_interface} ({preserved_public_ip})")
+        print(
+            f"[factory-reset] using preserved interface: {preserved_interface} ({preserved_public_ip})"
+        )
         core.init_topology_with_interface(preserved_public_ip, preserved_interface)
     else:
         print("[factory-reset] detecting network interfaces")
@@ -414,15 +478,24 @@ def main():
     )
     a.add_argument("--user", default=os.environ.get("ADMIN_USERNAME", "administrator"))
     a.add_argument("--password", default=os.environ.get("ADMIN_PASSWORD"))
-    a.add_argument("--app-user", default=os.environ.get("APP_USER") or os.environ.get("SUDO_USER") or "yggsec")
+    a.add_argument(
+        "--app-user",
+        default=os.environ.get("APP_USER") or os.environ.get("SUDO_USER") or "yggsec",
+    )
 
     b = sub.add_parser("factory-reset", help="overwrite admins.json only")
     b.add_argument("--user", default=os.environ.get("ADMIN_USERNAME", "administrator"))
     b.add_argument("--password", default=os.environ.get("ADMIN_PASSWORD"))
-    b.add_argument("--app-user", default=os.environ.get("APP_USER") or os.environ.get("SUDO_USER") or "yggsec")
+    b.add_argument(
+        "--app-user",
+        default=os.environ.get("APP_USER") or os.environ.get("SUDO_USER") or "yggsec",
+    )
 
     c = sub.add_parser("install-service", help="install+enable systemd unit")
-    c.add_argument("--app-user", default=os.environ.get("APP_USER") or os.environ.get("SUDO_USER") or "yggsec")
+    c.add_argument(
+        "--app-user",
+        default=os.environ.get("APP_USER") or os.environ.get("SUDO_USER") or "yggsec",
+    )
 
     args = p.parse_args()
 

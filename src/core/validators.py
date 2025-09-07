@@ -171,9 +171,7 @@ class WireGuardValidator:
 
         # Only allow wg followed by digits
         if not re.match(r"^wg[0-9]{1,2}$", iface):
-            raise ValidationError(
-                "Interface name must be wg followed by 1-2 digits (e.g., wg0)"
-            )
+            raise ValidationError("Interface name must be wg followed by 1-2 digits (e.g., wg0)")
 
         return True
 
@@ -281,8 +279,6 @@ class FirewallValidator:
 
         valid_protocols = ["tcp", "udp", "icmp", "all"]
         if protocol.lower() not in valid_protocols:
-            raise ValidationError(
-                f"Protocol must be one of: {', '.join(valid_protocols)}"
-            )
+            raise ValidationError(f"Protocol must be one of: {', '.join(valid_protocols)}")
 
         return True
