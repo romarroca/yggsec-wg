@@ -667,7 +667,8 @@ def edit_wg_port(port: str):
 
     # Validate the WireGuard port
     try:
-        NetworkValidator.validate_wg_port(port)
+        from src.core.validators import FirewallValidator
+        FirewallValidator.validate_wg_port(port)
     except Exception as e:
         raise ValueError(f"Invalid WireGuard port: {str(e)}")
 
