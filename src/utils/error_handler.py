@@ -6,7 +6,7 @@ Provides consistent error messaging, logging, and security-conscious error handl
 import logging
 import re
 import uuid
-from typing import Optional, Tuple
+from typing import Tuple
 
 try:
     from flask import current_app

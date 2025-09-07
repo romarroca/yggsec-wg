@@ -4,7 +4,6 @@ Environment variable support and validation for security settings
 """
 
 import os
-from pathlib import Path
 from typing import Optional
 
 

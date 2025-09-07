@@ -77,4 +77,5 @@ CLAUDE.md
 .claude/
 
 # Testing files
-test_nft_json.pycookiejar
+test_nft_json.py
+cookiejar

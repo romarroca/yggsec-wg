@@ -162,7 +162,7 @@ def _validate_vpn_ip(ip_str):
         if "/" in clean_ip:
             clean_ip = clean_ip.split("/")[0]
 
-        ip = ipaddress.IPv4Address(clean_ip)
+        ipaddress.IPv4Address(clean_ip)  # Validate IP format
         # Allow any valid IPv4 address (WireGuard can use any IP range)
         return True
     except ValueError:
@@ -787,7 +787,7 @@ def restart():
     try:
         core.restart_full(wg_conf)
         flash("wg0 restarted successfully.", "success")
-    except Exception as e:
+    except Exception:  # Intentionally catching all exceptions
         current_app.logger.error("wg0 restart failed - check service logs for details")
         flash("Service restart failed. Check logs.", "danger")
     return redirect(url_for("index"))

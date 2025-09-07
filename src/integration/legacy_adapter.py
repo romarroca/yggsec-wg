@@ -9,9 +9,9 @@ import sys
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from ..config.settings import get_config
-from ..core.exceptions import YggSecError
-from ..services.wireguard_service import WireGuardService
+from ..config.settings import get_config  # noqa: E402
+from ..core.exceptions import YggSecError  # noqa: E402
+from ..services.wireguard_service import WireGuardService  # noqa: E402
 
 
 class LegacyAdapter:
@@ -102,7 +102,7 @@ generate_spoke_conf = _adapter.generate_spoke_conf
 restart_full = _adapter.restart_full
 
 # Import missing functions from core.py that aren't in the adapter yet
-from ..core.core import (
+from ..core.core import (  # noqa: F401, E402
     add_hub_lan,
     add_spoke,
     delete_spoke,

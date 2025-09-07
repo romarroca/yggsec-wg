@@ -4,10 +4,7 @@ import json
 import os
 import re
 import subprocess
-import tempfile
-import time
 from json import JSONDecodeError
-from typing import Dict, List
 
 import netifaces
 
@@ -615,9 +612,6 @@ def edit_vpn_subnet(vpn_subnet: str):
     # Update topology
     old_subnet = topo["hub"]["subnet"]
     topo["hub"]["subnet"] = str(network)
-
-    # Update hub IP (first usable IP in subnet)
-    hub_ip = str(list(network.hosts())[0])
 
     # Reassign spoke VPN IPs to new subnet
     host_iter = iter(network.hosts())

@@ -4,9 +4,7 @@ import json
 import re
 import subprocess
 
-from src.core.exceptions import FirewallError, ValidationError
-from src.utils.error_handler import handle_service_error
-from src.utils.utils import run_priv, run_text
+from src.utils.utils import run_priv
 
 NFT_TABLE = "vpnfw"
 NFT_CHAIN = "forward"
@@ -191,7 +189,8 @@ def generate_nft_config_from_json(nft_data):
                     match = expression["match"]
                     left = match.get("left", {})
                     right = match.get("right")
-                    op = match.get("op", "==")
+                    # Note: operator currently unused, only "==" supported
+                    # op = match.get("op", "==")
 
                     # Connection tracking matching
                     if "ct" in left and left["ct"].get("key") == "state":
@@ -317,7 +316,7 @@ def test_json_config_parsing():
 
     # Debug: Show actual JSON structure
     print("\n🔍 Debug: Showing actual JSON structure...")
-    debug_data = debug_json_structure()
+    debug_json_structure()
     print("-" * 40)
 
     # Test config generation from JSON

@@ -49,7 +49,7 @@ def _valid_cidr(c):
     try:
         NetworkValidator.validate_cidr(c)
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -58,7 +58,7 @@ def validate_spoke_name(name):
     try:
         WireGuardValidator.validate_spoke_name(name)
         return True
-    except:
+    except Exception:
         return False
 
 

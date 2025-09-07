@@ -3,13 +3,12 @@ TOTP (Time-based One-Time Password) service for 2FA implementation
 Provides secure two-factor authentication using Google Authenticator compatible tokens
 """
 
-import base64
-import json
 import logging
 import os
 import secrets
+import time
 from io import BytesIO
-from typing import List, Optional, Tuple
+from typing import List, Optional
 
 import pyotp
 import qrcode
@@ -218,7 +217,3 @@ class TOTPService:
             "created": user_data.get("created"),
             "enabled_at": user_data.get("enabled_at"),
         }
-
-
-# Add time import at top level
-import time
