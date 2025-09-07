@@ -228,19 +228,21 @@ def extend_session():
         # Check if session has expired by testing session validity
         try:
             from datetime import datetime, timedelta
-            
+
             # Check if last_activity timestamp exists and if session has expired
             last_activity = session.get("last_activity")
             if last_activity:
                 last_activity_time = datetime.fromisoformat(last_activity)
-                session_timeout = timedelta(seconds=app.config["PERMANENT_SESSION_LIFETIME"])
-                
+                session_timeout = timedelta(
+                    seconds=app.config["PERMANENT_SESSION_LIFETIME"]
+                )
+
                 if datetime.now() - last_activity_time > session_timeout:
                     # Session expired, clear it and redirect to login
                     session.clear()
                     flash("Session expired. Please log in again.", "warning")
                     return redirect(url_for("login"))
-            
+
             # Session is valid, extend it with sliding expiration
             session.permanent = True
             session.modified = True
@@ -311,6 +313,7 @@ def login():
                         session.permanent = True
                         # Set initial activity timestamp for session timeout tracking
                         from datetime import datetime
+
                         session["last_activity"] = datetime.now().isoformat()
                         session.pop("pending_2fa_user", None)  # Clear pending state
                         flash("Signed in with 2FA.", "success")
@@ -333,6 +336,7 @@ def login():
                         session.permanent = True
                         # Set initial activity timestamp for session timeout tracking
                         from datetime import datetime
+
                         session["last_activity"] = datetime.now().isoformat()
                         session.pop("pending_2fa_user", None)  # Clear pending state
                         flash("Signed in with backup code.", "warning")
@@ -358,6 +362,7 @@ def login():
                 session.permanent = True
                 # Set initial activity timestamp for session timeout tracking
                 from datetime import datetime
+
                 session["last_activity"] = datetime.now().isoformat()
                 flash("Signed in.", "success")
                 dest = request.args.get("next") or url_for("index")
