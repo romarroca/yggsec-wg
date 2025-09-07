@@ -216,26 +216,43 @@ def generate_nonce():
     g.nonce = secrets.token_urlsafe(16)
 
 
-# Session management with sliding expiration
+# Session management with sliding expiration and automatic logout
 @app.before_request
 def extend_session():
     """
-    Implement sliding session expiration - extends session timeout on user activity.
+    Implement sliding session expiration with automatic logout for expired sessions.
     This provides better security (30min timeout) with improved usability
-    (active users stay logged in automatically).
+    (active users stay logged in automatically, expired sessions auto-logout).
     """
     if "user" in session:
-        # Make session permanent and mark as modified to extend expiration
-        session.permanent = True
-        session.modified = True
-
-        # Log session activity for security monitoring (optional)
+        # Check if session has expired by testing session validity
         try:
+            from datetime import datetime, timedelta
+            
+            # Check if last_activity timestamp exists and if session has expired
+            last_activity = session.get("last_activity")
+            if last_activity:
+                last_activity_time = datetime.fromisoformat(last_activity)
+                session_timeout = timedelta(seconds=app.config["PERMANENT_SESSION_LIFETIME"])
+                
+                if datetime.now() - last_activity_time > session_timeout:
+                    # Session expired, clear it and redirect to login
+                    session.clear()
+                    flash("Session expired. Please log in again.", "warning")
+                    return redirect(url_for("login"))
+            
+            # Session is valid, extend it with sliding expiration
+            session.permanent = True
+            session.modified = True
+            session["last_activity"] = datetime.now().isoformat()
+
+            # Log session activity for security monitoring (optional)
             username = session.get("user", "unknown")
             current_app.logger.debug(f"Session extended for user: {username}")
         except Exception:
-            # Fail silently if logging fails
-            pass
+            # Fail silently if logging/timestamp fails, but still extend session
+            session.permanent = True
+            session.modified = True
 
 
 # Security headers
@@ -292,6 +309,9 @@ def login():
                         # Valid TOTP token - complete login
                         session["user"] = username
                         session.permanent = True
+                        # Set initial activity timestamp for session timeout tracking
+                        from datetime import datetime
+                        session["last_activity"] = datetime.now().isoformat()
                         session.pop("pending_2fa_user", None)  # Clear pending state
                         flash("Signed in with 2FA.", "success")
                         dest = request.args.get("next") or url_for("index")
@@ -311,6 +331,9 @@ def login():
                         # Valid backup code - complete login
                         session["user"] = username
                         session.permanent = True
+                        # Set initial activity timestamp for session timeout tracking
+                        from datetime import datetime
+                        session["last_activity"] = datetime.now().isoformat()
                         session.pop("pending_2fa_user", None)  # Clear pending state
                         flash("Signed in with backup code.", "warning")
                         dest = request.args.get("next") or url_for("index")
@@ -333,6 +356,9 @@ def login():
                 # No 2FA enabled - complete login
                 session["user"] = username
                 session.permanent = True
+                # Set initial activity timestamp for session timeout tracking
+                from datetime import datetime
+                session["last_activity"] = datetime.now().isoformat()
                 flash("Signed in.", "success")
                 dest = request.args.get("next") or url_for("index")
                 # Proper open-redirect protection
