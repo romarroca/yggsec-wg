@@ -157,7 +157,7 @@ def get_suricata_mode():
     """Check if Suricata IPS is ON or OFF"""
     try:
         result = subprocess.run(['systemctl', 'is-active', 'suricata'], 
-                              capture_output=True, text=True)
+                              capture_output=True, text=True, shell=False)
         return 'ON' if result.stdout.strip() == 'active' else 'OFF'
     except Exception:
         return 'OFF'
@@ -167,7 +167,7 @@ def get_suricata_status():
     """Get Suricata service status"""
     try:
         result = subprocess.run(['systemctl', 'is-active', 'suricata'], 
-                              capture_output=True, text=True)
+                              capture_output=True, text=True, shell=False)
         return result.stdout.strip()
     except Exception:
         return 'unknown'

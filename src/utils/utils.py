@@ -34,6 +34,8 @@ def run_priv(args, **kw):
     kw.setdefault("check", True)
     if kw.get("capture_output", False):
         kw.setdefault("text", True)
+    # Explicitly set shell=False for security (Bandit B603)
+    kw.setdefault("shell", False)
     return subprocess.run(cmd, **kw)
 
 def run(args: Iterable[str], **kw) -> subprocess.CompletedProcess:

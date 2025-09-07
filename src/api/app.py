@@ -117,10 +117,11 @@ def _save_ping_result(spoke_name, result_data):
         # Ensure directory exists
         PING_RESULTS_FILE.parent.mkdir(parents=True, exist_ok=True)
         
-        # Write atomically
+        # Write atomically with secure permissions
         with tempfile.NamedTemporaryFile(mode='w', dir=PING_RESULTS_FILE.parent, 
                                        delete=False, suffix='.tmp') as f:
             json.dump(ping_results, f, indent=2)
+            os.fchmod(f.fileno(), 0o600)  # Secure permissions (Bandit B108)
             temp_path = f.name
         
         os.replace(temp_path, PING_RESULTS_FILE)
@@ -864,7 +865,7 @@ def api_ping_peer():
         try:
             result = subprocess.run([
                 "/bin/ping", "-c", "1", "-W", "2", ping_ip
-            ], capture_output=True, timeout=5, text=True, check=False)
+            ], capture_output=True, timeout=5, text=True, check=False, shell=False)
             
             success = result.returncode == 0
             response_time = _parse_ping_time(result.stdout) if success else None

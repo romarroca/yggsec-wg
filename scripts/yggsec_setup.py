@@ -33,7 +33,7 @@ def _require_root():
 
 def _chown(path: Path, user: str):
     try:
-        subprocess.run(["chown", "-R", f"{user}:{user}", str(path)], check=True)
+        subprocess.run(["chown", "-R", f"{user}:{user}", str(path)], check=True, shell=False)
     except subprocess.CalledProcessError as e:
         print(f"Warning: Failed to chown {path} to {user}: {e}")
     except Exception as e:
@@ -226,28 +226,28 @@ def ensure_vpnfw(policy: str = "drop"):
     except Exception:
         # Fallback: create table/chain + baseline directly
         subprocess.run([nft, "delete", "table", "inet", "vpnfw"], 
-                      check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        subprocess.run([nft, "add", "table", "inet", "vpnfw"], check=True)
+                      check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=False)
+        subprocess.run([nft, "add", "table", "inet", "vpnfw"], check=True, shell=False)
         subprocess.run([
             nft, "add", "chain", "inet", "vpnfw", "forward",
             "{", "type", "filter", "hook", "forward", "priority", "0", ";",
             "policy", policy, ";", "}"
-        ], check=True)
+        ], check=True, shell=False)
         if policy == "drop":
             subprocess.run([nft, "add", "rule", "inet", "vpnfw", "forward",
-                            "ct", "state", "established,related", "accept"], check=True)
+                            "ct", "state", "established,related", "accept"], check=True, shell=False)
             subprocess.run([nft, "add", "rule", "inet", "vpnfw", "forward",
-                            "ct", "state", "invalid", "drop"], check=True)
+                            "ct", "state", "invalid", "drop"], check=True, shell=False)
 
     # Persist current ruleset to /etc/nftables.d/vpnfw.nft
     out = subprocess.run([nft, "-s", "list", "table", "inet", "vpnfw"],
-                         check=True, capture_output=True, text=True).stdout
+                         check=True, capture_output=True, text=True, shell=False).stdout
     Path("/etc/nftables.d/vpnfw.nft").write_text(out)
 
     # Load from main and enable service (if systemd exists)
     try:
-        subprocess.run([nft, "-f", main_conf], check=True)
-        subprocess.run(["systemctl", "enable", "--now", "nftables"], check=False)
+        subprocess.run([nft, "-f", main_conf], check=True, shell=False)
+        subprocess.run(["systemctl", "enable", "--now", "nftables"], check=False, shell=False)
     except Exception:
         pass
 
@@ -293,9 +293,9 @@ WantedBy=multi-user.target
     UNIT_PATH.write_text(unit)
     _chmod(UNIT_PATH, 0o644)
 
-    subprocess.run(["systemctl", "daemon-reload"], check=True)
-    subprocess.run(["systemctl", "enable", "yggsec"], check=True)
-    subprocess.run(["systemctl", "restart", "yggsec"], check=True)
+    subprocess.run(["systemctl", "daemon-reload"], check=True, shell=False)
+    subprocess.run(["systemctl", "enable", "yggsec"], check=True, shell=False)
+    subprocess.run(["systemctl", "restart", "yggsec"], check=True, shell=False)
 
 
 def cmd_factory_reset_all(app_user: str, username: str, password: str | None):
@@ -318,7 +318,7 @@ def cmd_factory_reset_all(app_user: str, username: str, password: str | None):
     permission_script = APP_DIR / "scripts" / "permission.sh"
     if permission_script.exists():
         env = {"APP_DIR": str(APP_DIR), "APP_USER": app_user, "WG_IFACE": "wg0"}
-        subprocess.run([str(permission_script)], env=env, check=True)
+        subprocess.run([str(permission_script)], env=env, check=True, shell=False)
     else:
         print(f"Warning: {permission_script} not found, skipping permissions bootstrap")
 
@@ -394,7 +394,7 @@ def cmd_factory_reset(username: str, password: str | None, app_user: str):
     else:
         print(f"[factory-reset] temporary password (shown once): {temp}")
     # Nudge the app in case it was already running and needs to reload admins.json
-    subprocess.run(["systemctl", "restart", "yggsec"], check=False)
+    subprocess.run(["systemctl", "restart", "yggsec"], check=False, shell=False)
 
 
 def main():
