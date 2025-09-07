@@ -67,14 +67,18 @@ class LegacyAdapter:
         try:
             return self.wg_service.generate_hub_config(topology, hub_priv)
         except YggSecError as e:
-            raise RuntimeError(str(e))  # Convert to RuntimeError for legacy compatibility
+            raise RuntimeError(
+                str(e)
+            )  # Convert to RuntimeError for legacy compatibility
 
     def generate_spoke_conf(self, name, spoke, topology):
         """Generate spoke config - legacy interface"""
         try:
             return self.wg_service.generate_spoke_config(name, spoke, topology)
         except YggSecError as e:
-            raise RuntimeError(str(e))  # Convert to RuntimeError for legacy compatibility
+            raise RuntimeError(
+                str(e)
+            )  # Convert to RuntimeError for legacy compatibility
 
     def restart_full(self, wg_conf_path):
         """Restart interface - legacy interface"""

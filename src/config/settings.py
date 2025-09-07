@@ -87,7 +87,9 @@ class TestingConfig(BaseConfig):
     """Testing configuration"""
 
     DEBUG = True
-    ROOT_DIR = os.environ.get("YGGSEC_ROOT_DIR", os.path.join(tempfile.gettempdir(), "yggsec-test"))
+    ROOT_DIR = os.environ.get(
+        "YGGSEC_ROOT_DIR", os.path.join(tempfile.gettempdir(), "yggsec-test")
+    )
 
 
 # Configuration factory

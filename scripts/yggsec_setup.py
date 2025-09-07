@@ -33,7 +33,9 @@ def _require_root():
 
 def _chown(path: Path, user: str):
     try:
-        subprocess.run(["chown", "-R", f"{user}:{user}", str(path)], check=True, shell=False)
+        subprocess.run(
+            ["chown", "-R", f"{user}:{user}", str(path)], check=True, shell=False
+        )
     except subprocess.CalledProcessError as e:
         print(f"Warning: Failed to chown {path} to {user}: {e}")
     except Exception as e:
@@ -220,7 +222,9 @@ def ensure_vpnfw(policy: str = "drop"):
     main_conf = "/etc/nftables.conf"
     include_line = 'include "/etc/nftables.d/*.nft"'
     if not os.path.exists(main_conf):
-        Path(main_conf).write_text("#!/usr/sbin/nft -f\nflush ruleset\n" + include_line + "\n")
+        Path(main_conf).write_text(
+            "#!/usr/sbin/nft -f\nflush ruleset\n" + include_line + "\n"
+        )
     else:
         data = Path(main_conf).read_text()
         if include_line not in data:
@@ -312,7 +316,9 @@ def ensure_vpnfw(policy: str = "drop"):
     # Load from main and enable service (if systemd exists)
     try:
         subprocess.run([nft, "-f", main_conf], check=True, shell=False)
-        subprocess.run(["systemctl", "enable", "--now", "nftables"], check=False, shell=False)
+        subprocess.run(
+            ["systemctl", "enable", "--now", "nftables"], check=False, shell=False
+        )
     except Exception:
         pass
 
@@ -365,7 +371,9 @@ WantedBy=multi-user.target
 
 def cmd_factory_reset_all(app_user: str, username: str, password: str | None):
     """Wipe state, rebuild topology, reset admin, install service, regenerate, restart WireGuard."""
-    print("DANGER: wipes configs/keys/topology, regenerates, restarts service and WireGuard.")
+    print(
+        "DANGER: wipes configs/keys/topology, regenerates, restarts service and WireGuard."
+    )
     try:
         response = input('Type EXACTLY "RESET ALL" to continue: ').strip()
         if response != "RESET ALL":
@@ -437,7 +445,9 @@ def cmd_factory_reset_all(app_user: str, username: str, password: str | None):
             print("[factory-reset] WireGuard service restarted successfully")
         except Exception as e:
             print(f"[factory-reset] Warning: WireGuard restart failed: {e}")
-            print("[factory-reset] Configs generated successfully, manual restart may be needed")
+            print(
+                "[factory-reset] Configs generated successfully, manual restart may be needed"
+            )
 
     # 6) final permission fix after config generation
     ensure_app_permissions(app_user)

@@ -65,7 +65,9 @@ def _save_cached_alerts(alerts):
     try:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         # Keep only the most recent alerts
-        recent_alerts = alerts[-MAX_CACHED_ALERTS:] if len(alerts) > MAX_CACHED_ALERTS else alerts
+        recent_alerts = (
+            alerts[-MAX_CACHED_ALERTS:] if len(alerts) > MAX_CACHED_ALERTS else alerts
+        )
         with open(ALERT_CACHE, "w") as f:
             json.dump({"alerts": recent_alerts, "updated": time.time()}, f, indent=2)
     except Exception:
@@ -79,7 +81,9 @@ def _merge_and_dedupe_alerts(new_alerts, cached_alerts):
     merged = []
 
     # Process all alerts (new + cached) by timestamp descending
-    all_alerts = sorted(new_alerts + cached_alerts, key=lambda x: x.get("time", ""), reverse=True)
+    all_alerts = sorted(
+        new_alerts + cached_alerts, key=lambda x: x.get("time", ""), reverse=True
+    )
 
     for alert in all_alerts:
         # Create unique key from signature ID and timestamp
@@ -124,7 +128,9 @@ def read_eve(n=200, history=True):
     alerts_in_current = len([ln for ln in buf if '"event_type":"alert"' in ln])
 
     if history or alerts_in_current < n:
-        rotated_files = sorted(glob.glob(EVE_GLOB), key=lambda x: os.path.getctime(x), reverse=True)
+        rotated_files = sorted(
+            glob.glob(EVE_GLOB), key=lambda x: os.path.getctime(x), reverse=True
+        )
 
         for path in rotated_files:
             try:

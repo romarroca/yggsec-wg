@@ -185,7 +185,9 @@ def _check_ping_rate_limit(user, max_requests=10, window_seconds=60):
 
     # Remove old requests outside the window
     _ping_rate_limits[user_key] = [
-        req_time for req_time in _ping_rate_limits[user_key] if now - req_time < window_seconds
+        req_time
+        for req_time in _ping_rate_limits[user_key]
+        if now - req_time < window_seconds
     ]
 
     # Check if limit exceeded
@@ -242,7 +244,9 @@ def security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=31536000; includeSubDomains"
+    )
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         "style-src 'self' cdn.jsdelivr.net; "
@@ -293,7 +297,11 @@ def login():
                         dest = request.args.get("next") or url_for("index")
                         # Proper open-redirect protection
                         parsed = urlparse(dest)
-                        if parsed.netloc or not dest.startswith("/") or dest.startswith("//"):
+                        if (
+                            parsed.netloc
+                            or not dest.startswith("/")
+                            or dest.startswith("//")
+                        ):
                             dest = url_for("index")
                         return redirect(dest)
                     else:
@@ -308,7 +316,11 @@ def login():
                         dest = request.args.get("next") or url_for("index")
                         # Proper open-redirect protection
                         parsed = urlparse(dest)
-                        if parsed.netloc or not dest.startswith("/") or dest.startswith("//"):
+                        if (
+                            parsed.netloc
+                            or not dest.startswith("/")
+                            or dest.startswith("//")
+                        ):
                             dest = url_for("index")
                         return redirect(dest)
                     else:
@@ -350,7 +362,9 @@ def favicon():
     static_dir = os.path.join(app.root_path, "static")
     path = os.path.join(static_dir, "favicon.ico")
     if os.path.isfile(path):
-        return send_from_directory(static_dir, "favicon.ico", mimetype="image/vnd.microsoft.icon")
+        return send_from_directory(
+            static_dir, "favicon.ico", mimetype="image/vnd.microsoft.icon"
+        )
     return ("", 204)
 
 
@@ -890,7 +904,9 @@ def api_ping_peer():
     try:
         # 1. Rate limiting protection
         current_username = session.get("user")
-        if not _check_ping_rate_limit(current_username, max_requests=10, window_seconds=60):
+        if not _check_ping_rate_limit(
+            current_username, max_requests=10, window_seconds=60
+        ):
             return (
                 jsonify({"error": "Rate limit exceeded. Try again in a minute."}),
                 429,
@@ -923,7 +939,9 @@ def api_ping_peer():
         # 6. Validate VPN IP exists and is valid
         vpn_ip_raw = target_spoke.get("vpn_ip", "").strip()
         if not vpn_ip_raw:
-            current_app.logger.warning(f"Ping request for spoke {spoke_name}: No VPN IP configured")
+            current_app.logger.warning(
+                f"Ping request for spoke {spoke_name}: No VPN IP configured"
+            )
             return jsonify({"error": "Spoke has no VPN IP configured"}), 400
 
         if not _validate_vpn_ip(vpn_ip_raw):

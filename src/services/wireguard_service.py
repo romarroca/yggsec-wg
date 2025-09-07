@@ -42,7 +42,10 @@ class WireGuardService:
 
     def topology_exists(self) -> bool:
         """Check if topology configuration exists and is not empty"""
-        return os.path.isfile(self.config.cfg_file) and os.path.getsize(self.config.cfg_file) > 0
+        return (
+            os.path.isfile(self.config.cfg_file)
+            and os.path.getsize(self.config.cfg_file) > 0
+        )
 
     def load_topology(self) -> Optional[Dict]:
         """
@@ -179,7 +182,9 @@ class WireGuardService:
                 raise NetworkConfigError(f"Subnet {cidr} has no host addresses")
             return f"{hosts[0]}/{network.prefixlen}"  # first host
         except (ValueError, IndexError) as e:
-            raise NetworkConfigError(f"Cannot generate hub address from {cidr}: {str(e)}")
+            raise NetworkConfigError(
+                f"Cannot generate hub address from {cidr}: {str(e)}"
+            )
 
     def generate_hub_config(self, topology: Dict, hub_private_key: str) -> str:
         """
@@ -226,7 +231,9 @@ PublicKey  = {spoke['public_key']}
 AllowedIPs = {", ".join(parts)}
 """
 
-            config_path = os.path.join(self.config.wg_dir, f"{self.config.WG_IFACE}.conf")
+            config_path = os.path.join(
+                self.config.wg_dir, f"{self.config.WG_IFACE}.conf"
+            )
             write_text_atomic(config_path, config_content, 0o600)
 
             return config_path
@@ -254,7 +261,9 @@ AllowedIPs = {", ".join(parts)}
             pass
         return local_nets
 
-    def generate_spoke_config(self, spoke_name: str, spoke_data: Dict, topology: Dict) -> str:
+    def generate_spoke_config(
+        self, spoke_name: str, spoke_data: Dict, topology: Dict
+    ) -> str:
         """
         Generate configuration file for a spoke
 
@@ -285,7 +294,9 @@ AllowedIPs = {", ".join(parts)}
                 allowed = [topology["hub"]["subnet"]] + hub_lans
 
             # Load private key
-            priv_key_path = os.path.join(self.config.keys_dir, f"{spoke_name}_private.key")
+            priv_key_path = os.path.join(
+                self.config.keys_dir, f"{spoke_name}_private.key"
+            )
             if not os.path.exists(priv_key_path):
                 raise WireGuardError(f"Private key not found for spoke {spoke_name}")
 
@@ -306,11 +317,15 @@ PersistentKeepalive = 25
             config_path = os.path.join(
                 self.config.wg_dir, f"{spoke_name}-{self.config.WG_IFACE}.conf"
             )
-            write_text_atomic(config_path, config_content, 0o644)  # Readable for QR codes
+            write_text_atomic(
+                config_path, config_content, 0o644
+            )  # Readable for QR codes
 
             return config_path
         except Exception as e:
-            raise WireGuardError(f"Failed to generate spoke config for {spoke_name}: {str(e)}")
+            raise WireGuardError(
+                f"Failed to generate spoke config for {spoke_name}: {str(e)}"
+            )
 
     def restart_interface(self, config_path: str) -> Tuple[bool, str]:
         """
@@ -328,13 +343,17 @@ PersistentKeepalive = 25
             unit = f"wg-up@{self.config.WG_IFACE}"
 
             # Try restart first
-            cp = run_priv(["systemctl", "--no-pager", "--plain", "try-restart", unit], check=False)
+            cp = run_priv(
+                ["systemctl", "--no-pager", "--plain", "try-restart", unit], check=False
+            )
             if cp.returncode == 0:
                 return True, "Interface restarted successfully"
 
             # If restart fails, reload daemon and restart
             run_priv(["systemctl", "--no-pager", "--plain", "daemon-reload"])
-            cp = run_priv(["systemctl", "--no-pager", "--plain", "restart", unit], check=False)
+            cp = run_priv(
+                ["systemctl", "--no-pager", "--plain", "restart", unit], check=False
+            )
 
             if cp.returncode == 0:
                 return True, "Interface restarted successfully"

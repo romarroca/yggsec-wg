@@ -199,7 +199,9 @@ class TOTPService:
         codes = []
         for _ in range(count):
             # Generate 8-character alphanumeric codes
-            code = "".join(secrets.choice("ABCDEFGHJKMNPQRSTUVWXYZ23456789") for _ in range(8))
+            code = "".join(
+                secrets.choice("ABCDEFGHJKMNPQRSTUVWXYZ23456789") for _ in range(8)
+            )
             codes.append(code)
         return codes
 
