@@ -36,7 +36,7 @@ jobs:
         
     - name: Lint with flake8
       run: |
-        flake8 . --count --show-source --statistics
+        flake8 . --config=.flake8 --count --show-source --statistics
         
     - name: Type checking with mypy
       run: |
