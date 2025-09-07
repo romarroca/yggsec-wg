@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 # suricata.py
-import os, glob, gzip, json, subprocess, time
+import glob
+import gzip
+import json
+import os
+import subprocess
+import time
 from collections import deque
 from pathlib import Path
 

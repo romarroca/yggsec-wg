@@ -3,19 +3,20 @@ TOTP (Time-based One-Time Password) service for 2FA implementation
 Provides secure two-factor authentication using Google Authenticator compatible tokens
 """
 
-import os
-import secrets
 import base64
 import json
+import logging
+import os
+import secrets
+from io import BytesIO
+from typing import List, Optional, Tuple
+
 import pyotp
 import qrcode
-from io import BytesIO
-from typing import Optional, List, Tuple
-import logging
 
 from ..config.settings import get_config
-from ..utils.utils import write_json_atomic, read_json
 from ..core.exceptions import YggSecError
+from ..utils.utils import read_json, write_json_atomic
 
 
 class TOTPError(YggSecError):

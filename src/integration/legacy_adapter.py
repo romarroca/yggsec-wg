@@ -3,15 +3,15 @@ Legacy adapter to maintain backward compatibility with existing app.py
 Provides the same interface as the original core.py functions
 """
 
-import sys
 import os
+import sys
 
 # Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from ..config.settings import get_config
-from ..services.wireguard_service import WireGuardService
 from ..core.exceptions import YggSecError
+from ..services.wireguard_service import WireGuardService
 
 
 class LegacyAdapter:
@@ -102,16 +102,9 @@ generate_spoke_conf = _adapter.generate_spoke_conf
 restart_full = _adapter.restart_full
 
 # Import missing functions from core.py that aren't in the adapter yet
-from ..core.core import (
-    add_hub_lan,
-    remove_hub_lan,
-    edit_vpn_subnet,
-    add_spoke,
-    regenerate_all,
-    regenerate_hub_keys,
-    regenerate_spoke_keys,
-    delete_spoke,
-)
+from ..core.core import (add_hub_lan, add_spoke, delete_spoke, edit_vpn_subnet,
+                         regenerate_all, regenerate_hub_keys,
+                         regenerate_spoke_keys, remove_hub_lan)
 
 # Export constants that app.py expects
 ROOT_DIR = _adapter.ROOT_DIR

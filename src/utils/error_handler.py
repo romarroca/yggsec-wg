@@ -6,7 +6,7 @@ Provides consistent error messaging, logging, and security-conscious error handl
 import logging
 import re
 import uuid
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 
 try:
     from flask import current_app
@@ -16,17 +16,11 @@ except ImportError:
     FLASK_AVAILABLE = False
 
 try:
-    from ..core.exceptions import (
-        YggSecError,
-        ValidationError,
-        NetworkConfigError,
-        WireGuardError,
-        FirewallError,
-        AuthenticationError,
-        PermissionError,
-        ServiceError,
-        ConfigurationError,
-    )
+    from ..core.exceptions import (AuthenticationError, ConfigurationError,
+                                   FirewallError, NetworkConfigError,
+                                   PermissionError, ServiceError,
+                                   ValidationError, WireGuardError,
+                                   YggSecError)
 except ImportError:
     # Fallback if running outside of main app context
     class YggSecError(Exception):

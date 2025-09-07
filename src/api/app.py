@@ -1,39 +1,29 @@
 # path: app.py  (minimal cleanup + safe redirect + favicon)
-from flask import (
-    Flask,
-    render_template,
-    redirect,
-    url_for,
-    flash,
-    jsonify,
-    request,
-    send_from_directory,
-    current_app,
-    session,
-    g,
-)
+import ipaddress
+import json
 import os
 import re
-import time
-import ipaddress
+import secrets
 import subprocess
 import tempfile
-import secrets
+import time
 from functools import wraps
 from pathlib import Path
-import json
 from urllib.parse import urlparse
-from werkzeug.security import check_password_hash, generate_password_hash
-from flask_wtf.csrf import CSRFProtect
+
+from flask import (Flask, current_app, flash, g, jsonify, redirect,
+                   render_template, request, send_from_directory, session,
+                   url_for)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_wtf.csrf import CSRFProtect
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from src.core import core_legacy as core
-from src.core import firewall
-from src.core import monitor
+from src.core import firewall, monitor
 from src.core.firewall import persist_vpnfw_table
-from src.utils.error_handler import handle_api_error, ErrorHandler
 from src.services.totp_service import TOTPService
+from src.utils.error_handler import ErrorHandler, handle_api_error
 
 app = Flask(__name__, template_folder="../../templates", static_folder="../../static")
 app.secret_key = os.environ["SECRET_KEY"]

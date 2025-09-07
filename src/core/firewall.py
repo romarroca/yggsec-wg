@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import subprocess
-import re
 import ipaddress
 import json
-from src.utils.utils import run_priv, run_text
-from src.utils.error_handler import handle_service_error
+import re
+import subprocess
+
 from src.core.exceptions import FirewallError, ValidationError
+from src.utils.error_handler import handle_service_error
+from src.utils.utils import run_priv, run_text
 
 NFT_TABLE = "vpnfw"
 NFT_CHAIN = "forward"
@@ -358,8 +359,8 @@ def test_json_config_parsing():
 
 def persist_vpnfw_table():
     """Dump inet:vpnfw and persist to /etc/nftables.d/vpnfw.nft atomically."""
-    import tempfile
     import os
+    import tempfile
 
     ok, output = run_cmd(["nft", "-s", "list", "table", "inet", NFT_TABLE])
     if not ok:

@@ -3,8 +3,8 @@ Input validation utilities following CLAUDE.md security principles
 Centralized validation logic for consistency and security
 """
 
-import re
 import ipaddress
+import re
 from typing import Union
 
 from .exceptions import ValidationError

@@ -1,7 +1,11 @@
 # /opt/yggsec/utils.py
+import json
+import os
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
-import shutil, subprocess, tempfile, os, json
-from typing import Iterable, List, Dict
+from typing import Dict, Iterable, List
 
 BINMAP: Dict[str, str] = {
     "wg": "/usr/bin/wg",
