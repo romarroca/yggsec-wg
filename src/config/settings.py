@@ -4,6 +4,7 @@ Environment variable support and validation for security settings
 """
 
 import os
+import tempfile
 from typing import Optional
 
 
@@ -86,7 +87,7 @@ class TestingConfig(BaseConfig):
     """Testing configuration"""
 
     DEBUG = True
-    ROOT_DIR = "/tmp/yggsec-test"
+    ROOT_DIR = os.environ.get("YGGSEC_ROOT_DIR", os.path.join(tempfile.gettempdir(), "yggsec-test"))
 
 
 # Configuration factory
