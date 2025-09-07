@@ -1,4 +1,4 @@
-# YggSec-WG
+# YggSec WireG
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
@@ -30,6 +30,24 @@ Secure WireGuard orchestration platform with built-in firewall and intrusion pre
 - **RAM**: Minimum 1GB (2GB+ recommended for IPS)
 - **Storage**: 2GB+ free space
 - **Network**: Root access for network configuration
+
+### Development & Testing Environment
+
+YggSec WireG was developed and tested on **AWS EC2** with the following specifications:
+
+**Instance Type**: `t3.small`
+- **vCPUs**: 2 virtual CPUs
+- **Memory**: 2 GiB RAM  
+- **OS**: Ubuntu Server 24.04 LTS (HVM)
+- **Architecture**: x86_64 (64-bit)
+- **Virtualization**: HVM with ENA enabled
+- **Storage**: SSD Volume (EBS)
+
+**AWS Pricing Reference** (On-Demand):
+- Ubuntu base: ~$0.0208 USD/hour
+- Estimated monthly: ~$15 USD/month (24/7 operation)
+
+This configuration provides excellent performance for small to medium-scale VPN deployments and is well within AWS Free Tier eligible limits for new accounts.
 
 ### Package Dependencies
 
@@ -65,8 +83,8 @@ The installation script will automatically install these packages:
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/romarroca/yggsec-wg.git
-cd yggsec-wg
+git clone https://github.com/romarroca/yggsec-wireG.git
+cd yggsec-wireG
 ```
 
 2. **Run the installation script:**

@@ -562,56 +562,5 @@ def edit_vpn_subnet(vpn_subnet: str):
     
     return f"VPN subnet changed from {old_subnet} to {vpn_subnet}. All clients must be reconfigured."
 
-# ===== Peer status via wg handshake (no ping) =====
-def _vpn_ips_from_allowed(allowed_field: str) -> List[str]:
-    ips: List[str] = []
-    for token in (allowed_field or "").split(","):
-        t = token.strip()
-        if not t:
-            continue
-        try:
-            iface = ipaddress.ip_interface(t)
-            if iface.network.prefixlen in (32, 128):
-                ips.append(str(iface.ip))
-        except ValueError:
-            pass
-    return ips
-
-def get_peer_status():
-    topo = load_topology() or {}
-    spokes = topo.get("spokes", [])
-    now = int(time.time())
-
-    wg_by_ip: Dict[str, Dict] = {}
-    try:
-        out = run_text(["wg", "show", WG_IFACE, "dump"])
-        lines = [ln for ln in out.splitlines() if ln.strip()]
-        for ln in lines[1:]:
-            parts = ln.split("\t")
-            if len(parts) < 8:
-                continue
-            allowed = parts[3]
-            try:
-                last_hs = int(parts[4])
-            except (ValueError, TypeError):
-                last_hs = 0
-            online = (last_hs > 0) and ((now - last_hs) <= HANDSHAKE_STALE_SECS)
-            for vip in _vpn_ips_from_allowed(allowed):
-                wg_by_ip[vip] = {
-                    "vpn_ip": vip,
-                    "online": online,
-                    "last_handshake": last_hs,
-                }
-    except subprocess.CalledProcessError:
-        wg_by_ip = {}
-
-    out_list = []
-    for s in spokes:
-        vip = s.get("vpn_ip", "") or ""
-        out_list.append({
-            **s,
-            **wg_by_ip.get(vip, {"vpn_ip": vip, "online": False, "last_handshake": 0})
-        })
-    return out_list
 
 

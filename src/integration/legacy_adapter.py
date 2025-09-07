@@ -82,12 +82,6 @@ class LegacyAdapter:
             raise RuntimeError(message)
         return success, message
     
-    def get_peer_status(self):
-        """Get peer status - legacy interface"""
-        try:
-            return self.wg_service.get_peer_status()
-        except YggSecError:
-            return []  # Legacy behavior - return empty list on error
 
 
 # Create global instance for backward compatibility
@@ -102,7 +96,6 @@ gen_keypair = _adapter.gen_keypair
 generate_hub_conf = _adapter.generate_hub_conf
 generate_spoke_conf = _adapter.generate_spoke_conf
 restart_full = _adapter.restart_full
-get_peer_status = _adapter.get_peer_status
 
 # Import missing functions from core.py that aren't in the adapter yet
 from ..core.core import add_hub_lan, remove_hub_lan, edit_vpn_subnet, add_spoke, regenerate_all, regenerate_hub_keys, regenerate_spoke_keys, delete_spoke

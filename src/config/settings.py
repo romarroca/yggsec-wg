@@ -1,6 +1,6 @@
 """
-Configuration management following CLAUDE.md best practices
-Centralized configuration with environment variable support
+Configuration management with centralized settings
+Environment variable support and validation for security settings
 """
 import os
 from pathlib import Path

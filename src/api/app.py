@@ -428,8 +428,7 @@ def firewall_page():
 @login_required
 def index():
     topology = core.load_topology()
-    peers = core.get_peer_status()
-    return render_template("index.html", topology=topology, peers=peers)
+    return render_template("index.html", topology=topology)
 
 # -----------------------------
 # Add Remote Site

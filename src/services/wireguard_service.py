@@ -4,10 +4,9 @@ Extracted from core.py with improved error handling and modularity
 """
 import os
 import json
-import time
 import ipaddress
 import subprocess
-from typing import List, Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple
 from pathlib import Path
 
 from ..config.settings import BaseConfig
@@ -339,76 +338,3 @@ PersistentKeepalive = 25
         except Exception as e:
             return False, f"System error during restart: {str(e)}"
     
-    def get_peer_status(self) -> List[Dict]:
-        """
-        Get status of all peers from WireGuard interface
-        
-        Returns:
-            List[Dict]: List of peer status information
-            
-        Raises:
-            WireGuardError: If unable to get peer status
-        """
-        topology = self.load_topology() or {}
-        spokes = topology.get("spokes", [])
-        now = int(time.time())
-        
-        # Get WireGuard status
-        wg_by_ip = {}
-        try:
-            output = run_text(["wg", "show", self.config.WG_IFACE, "dump"])
-            lines = [line for line in output.splitlines() if line.strip()]
-            
-            for line in lines[1:]:  # Skip header
-                parts = line.split("\t")
-                if len(parts) < 8:
-                    continue
-                
-                allowed = parts[3]
-                try:
-                    last_handshake = int(parts[4])
-                except (ValueError, TypeError):
-                    last_handshake = 0
-                
-                online = (last_handshake > 0) and ((now - last_handshake) <= self.config.HANDSHAKE_STALE_SECS)
-                
-                # Extract VPN IPs from allowed IPs
-                for vpn_ip in self._extract_vpn_ips_from_allowed(allowed):
-                    wg_by_ip[vpn_ip] = {
-                        "vpn_ip": vpn_ip,
-                        "online": online,
-                        "last_handshake": last_handshake,
-                    }
-        except subprocess.CalledProcessError:
-            # WireGuard interface might not be up
-            pass
-        
-        # Combine topology data with WireGuard status
-        result = []
-        for spoke in spokes:
-            vpn_ip = spoke.get("vpn_ip", "").strip()
-            if "/" in vpn_ip:
-                vpn_ip = vpn_ip.split("/")[0]  # Remove CIDR notation
-            
-            spoke_status = {
-                **spoke,
-                **wg_by_ip.get(vpn_ip, {"vpn_ip": vpn_ip, "online": False, "last_handshake": 0})
-            }
-            result.append(spoke_status)
-        
-        return result
-    
-    def _extract_vpn_ips_from_allowed(self, allowed_field: str) -> List[str]:
-        """Extract VPN IP addresses from WireGuard allowed IPs field"""
-        ips = []
-        for token in (allowed_field or "").split(","):
-            token = token.strip()
-            if not token:
-                continue
-            try:
-                interface = ipaddress.ip_interface(token)
-                if interface.network.prefixlen in (32, 128):  # Single host
-                    ips.append(str(interface.ip))
-            except ValueError:
-                pass
-        return ips

@@ -1,5 +1,5 @@
 """
-Custom exceptions for YggSec following CLAUDE.md error handling principles
+Custom exceptions for YggSec with structured error handling
 Provides clear error messages and graceful failure handling
 """
 
