@@ -80,7 +80,7 @@ echo "[1/10] Install packages (2-5 minutes - please wait, DO NOT INTERRUPT)"
 export DEBIAN_FRONTEND=noninteractive
 
 echo "Updating package lists..."
-apt-get update -y > /dev/null 2>&1
+apt-get update -y
 
 echo "Installing core packages (WireGuard, nginx, Suricata IPS)..."
 echo "    This step downloads ~200MB and may take several minutes"
@@ -145,13 +145,13 @@ chown -R "$APP_USER:$APP_GROUP" "$APP_DIR"
 
 echo "[4/10] Python venv + deps (1-2 minutes)"
 echo "Setting up Python virtual environment..."
-python3 -m venv "$VENV_DIR" > /dev/null 2>&1
-"$VENV_DIR/bin/pip" install --upgrade pip wheel > /dev/null 2>&1
+python3 -m venv "$VENV_DIR"
+"$VENV_DIR/bin/pip" install --upgrade pip wheel
 if [ -f "$APP_DIR/requirements.txt" ]; then
   echo "Installing Python dependencies (Flask, security tools)..."
   "$VENV_DIR/bin/pip" install -r "$APP_DIR/requirements.txt"
 fi
-"$VENV_DIR/bin/pip" show gunicorn >/dev/null 2>&1 || "$VENV_DIR/bin/pip" install gunicorn > /dev/null 2>&1
+"$VENV_DIR/bin/pip" show gunicorn >/dev/null 2>&1 || "$VENV_DIR/bin/pip" install gunicorn
 echo "[OK] Python environment ready"
 
 echo "[5/10] Network setup"
