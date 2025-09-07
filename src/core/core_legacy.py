@@ -8,6 +8,7 @@ To maintain compatibility, import from this file
 """
 
 import ipaddress
+
 # Import the remaining functions that weren't covered yet
 import os
 import re
@@ -17,6 +18,7 @@ import netifaces
 
 from src.config.settings import get_config
 from src.core.validators import NetworkValidator, WireGuardValidator
+
 # Import everything from the legacy adapter
 from src.integration.legacy_adapter import *
 from src.services.wireguard_service import WireGuardService

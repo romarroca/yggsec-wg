@@ -11,11 +11,9 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 
 from ..config.settings import BaseConfig
-from ..core.exceptions import (NetworkConfigError, ValidationError,
-                               WireGuardError)
+from ..core.exceptions import NetworkConfigError, ValidationError, WireGuardError
 from ..core.validators import NetworkValidator, WireGuardValidator
-from ..utils.utils import (run_priv, run_text, write_json_atomic,
-                           write_text_atomic)
+from ..utils.utils import run_priv, run_text, write_json_atomic, write_text_atomic
 
 
 class WireGuardService:

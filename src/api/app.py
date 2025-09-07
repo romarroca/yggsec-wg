@@ -11,9 +11,19 @@ from functools import wraps
 from pathlib import Path
 from urllib.parse import urlparse
 
-from flask import (Flask, current_app, flash, g, jsonify, redirect,
-                   render_template, request, send_from_directory, session,
-                   url_for)
+from flask import (
+    Flask,
+    current_app,
+    flash,
+    g,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+    url_for,
+)
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_wtf.csrf import CSRFProtect

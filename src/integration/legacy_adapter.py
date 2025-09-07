@@ -102,9 +102,16 @@ generate_spoke_conf = _adapter.generate_spoke_conf
 restart_full = _adapter.restart_full
 
 # Import missing functions from core.py that aren't in the adapter yet
-from ..core.core import (add_hub_lan, add_spoke, delete_spoke, edit_vpn_subnet,
-                         regenerate_all, regenerate_hub_keys,
-                         regenerate_spoke_keys, remove_hub_lan)
+from ..core.core import (
+    add_hub_lan,
+    add_spoke,
+    delete_spoke,
+    edit_vpn_subnet,
+    regenerate_all,
+    regenerate_hub_keys,
+    regenerate_spoke_keys,
+    remove_hub_lan,
+)
 
 # Export constants that app.py expects
 ROOT_DIR = _adapter.ROOT_DIR

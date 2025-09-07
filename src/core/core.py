@@ -11,8 +11,7 @@ from typing import Dict, List
 
 import netifaces
 
-from src.utils.utils import (run_priv, run_text, write_json_atomic,
-                             write_text_atomic)
+from src.utils.utils import run_priv, run_text, write_json_atomic, write_text_atomic
 
 # ===== Paths / constants =====
 ROOT_DIR = os.environ.get("YGGSEC_ROOT", "/opt/yggsec")

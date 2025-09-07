@@ -16,11 +16,17 @@ except ImportError:
     FLASK_AVAILABLE = False
 
 try:
-    from ..core.exceptions import (AuthenticationError, ConfigurationError,
-                                   FirewallError, NetworkConfigError,
-                                   PermissionError, ServiceError,
-                                   ValidationError, WireGuardError,
-                                   YggSecError)
+    from ..core.exceptions import (
+        AuthenticationError,
+        ConfigurationError,
+        FirewallError,
+        NetworkConfigError,
+        PermissionError,
+        ServiceError,
+        ValidationError,
+        WireGuardError,
+        YggSecError,
+    )
 except ImportError:
     # Fallback if running outside of main app context
     class YggSecError(Exception):
