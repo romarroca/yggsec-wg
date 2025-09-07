@@ -1,7 +1,16 @@
 # path: app.py  (minimal cleanup + safe redirect + favicon)
 from flask import (
-    Flask, render_template, redirect, url_for, flash, jsonify,
-    request, send_from_directory, current_app, session, g
+    Flask,
+    render_template,
+    redirect,
+    url_for,
+    flash,
+    jsonify,
+    request,
+    send_from_directory,
+    current_app,
+    session,
+    g,
 )
 import os
 import re
@@ -26,26 +35,23 @@ from src.core.firewall import persist_vpnfw_table
 from src.utils.error_handler import handle_api_error, ErrorHandler
 from src.services.totp_service import TOTPService
 
-app = Flask(__name__, template_folder='../../templates', static_folder='../../static')
+app = Flask(__name__, template_folder="../../templates", static_folder="../../static")
 app.secret_key = os.environ["SECRET_KEY"]
 
 # Security configurations
 app.config.update(
-    SESSION_COOKIE_SECURE=True,      # HTTPS only
-    SESSION_COOKIE_HTTPONLY=True,    # No JS access
-    SESSION_COOKIE_SAMESITE='Lax',   # CSRF protection
-    PERMANENT_SESSION_LIFETIME=1800, # 30 minutes timeout (improved security)
-    WTF_CSRF_TIME_LIMIT=1800        # CSRF token timeout (match session)
+    SESSION_COOKIE_SECURE=True,  # HTTPS only
+    SESSION_COOKIE_HTTPONLY=True,  # No JS access
+    SESSION_COOKIE_SAMESITE="Lax",  # CSRF protection
+    PERMANENT_SESSION_LIFETIME=1800,  # 30 minutes timeout (improved security)
+    WTF_CSRF_TIME_LIMIT=1800,  # CSRF token timeout (match session)
 )
 
 # Initialize CSRF protection
 csrf = CSRFProtect(app)
 
 # Initialize rate limiting
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=["100 per hour"]
-)
+limiter = Limiter(key_func=get_remote_address, default_limits=["100 per hour"])
 limiter.init_app(app)
 
 # Initialize TOTP service
@@ -56,6 +62,7 @@ totp_service = TOTPService()
 # -----------------------------
 ADMINS_FILE = Path("configs/admins.json")
 
+
 def _load_admins_dict():
     if ADMINS_FILE.exists():
         data = json.loads(ADMINS_FILE.read_text() or "{}")
@@ -63,25 +70,35 @@ def _load_admins_dict():
     # Bootstrap from env if no file
     u = os.environ.get("ADMIN_USERNAME", "administrator")
     p = os.environ.get("ADMIN_PASSWORD")
-    
+
     # SECURITY FIX: No hardcoded password default
     if not p:
-        raise ValueError("ADMIN_PASSWORD environment variable must be set - no default password for security")
-    
-    return {u: {
-        "username": u, "first_name": "Admin", "last_name": "User",
-        "password_hash": generate_password_hash(p)
-    }}
+        raise ValueError(
+            "ADMIN_PASSWORD environment variable must be set - no default password for security"
+        )
+
+    return {
+        u: {
+            "username": u,
+            "first_name": "Admin",
+            "last_name": "User",
+            "password_hash": generate_password_hash(p),
+        }
+    }
+
 
 def _save_admins_dict(d):
     ADMINS_FILE.parent.mkdir(parents=True, exist_ok=True)
     ADMINS_FILE.write_text(json.dumps({"admins": list(d.values())}, indent=2))
 
+
 ADMINS = _load_admins_dict()
+
 
 def verify_admin(username, password):
     a = ADMINS.get(username)
     return bool(a and check_password_hash(a["password_hash"], password))
+
 
 # Rate limiting storage for ping API
 _ping_rate_limits = {}
@@ -89,47 +106,51 @@ _ping_rate_limits = {}
 # Ping results persistence
 PING_RESULTS_FILE = Path("configs/ping_results.json")
 
+
 def _load_ping_results():
     """Load persistent ping results from file."""
     if PING_RESULTS_FILE.exists():
         try:
-            with open(PING_RESULTS_FILE, 'r') as f:
+            with open(PING_RESULTS_FILE, "r") as f:
                 return json.load(f)
         except (json.JSONDecodeError, IOError):
             return {}
     return {}
+
 
 def _save_ping_result(spoke_name, result_data):
     """Save a single ping result to persistent storage."""
     try:
         # Load existing results
         ping_results = _load_ping_results()
-        
+
         # Update with new result
         ping_results[spoke_name] = {
             "reachable": result_data.get("reachable", False),
             "response_time": result_data.get("response_time"),
             "message": result_data.get("message", ""),
             "timestamp": result_data.get("timestamp", int(time.time())),
-            "vpn_ip": result_data.get("vpn_ip", "")
+            "vpn_ip": result_data.get("vpn_ip", ""),
         }
-        
+
         # Ensure directory exists
         PING_RESULTS_FILE.parent.mkdir(parents=True, exist_ok=True)
-        
+
         # Write atomically with secure permissions
-        with tempfile.NamedTemporaryFile(mode='w', dir=PING_RESULTS_FILE.parent, 
-                                       delete=False, suffix='.tmp') as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", dir=PING_RESULTS_FILE.parent, delete=False, suffix=".tmp"
+        ) as f:
             json.dump(ping_results, f, indent=2)
             os.fchmod(f.fileno(), 0o600)  # Secure permissions (Bandit B108)
             temp_path = f.name
-        
+
         os.replace(temp_path, PING_RESULTS_FILE)
         return True
     except Exception as e:
         sanitized_error = ErrorHandler._sanitize_message(str(e))
         current_app.logger.error(f"Failed to save ping result: {sanitized_error}")
         return False
+
 
 def _validate_vpn_ip(ip_str):
     """Strict IP validation for VPN subnets to prevent injection"""
@@ -138,49 +159,55 @@ def _validate_vpn_ip(ip_str):
     try:
         # Handle both IP addresses and CIDR notation (strip /32 if present)
         clean_ip = ip_str.strip()
-        if '/' in clean_ip:
-            clean_ip = clean_ip.split('/')[0]
-        
+        if "/" in clean_ip:
+            clean_ip = clean_ip.split("/")[0]
+
         ip = ipaddress.IPv4Address(clean_ip)
         # Allow any valid IPv4 address (WireGuard can use any IP range)
         return True
     except ValueError:
         return False
 
+
 def _parse_ping_time(ping_output):
     """Extract ping time from ping command output"""
-    match = re.search(r'time=(\d+(?:\.\d+)?)', ping_output)
+    match = re.search(r"time=(\d+(?:\.\d+)?)", ping_output)
     return float(match.group(1)) if match else None
+
 
 def _check_ping_rate_limit(user, max_requests=10, window_seconds=60):
     """Rate limit ping requests per user"""
     now = time.time()
     user_key = f"ping_{user}"
-    
+
     if user_key not in _ping_rate_limits:
         _ping_rate_limits[user_key] = []
-    
+
     # Remove old requests outside the window
     _ping_rate_limits[user_key] = [
-        req_time for req_time in _ping_rate_limits[user_key] 
+        req_time
+        for req_time in _ping_rate_limits[user_key]
         if now - req_time < window_seconds
     ]
-    
+
     # Check if limit exceeded
     if len(_ping_rate_limits[user_key]) >= max_requests:
         return False
-    
+
     # Add current request
     _ping_rate_limits[user_key].append(now)
     return True
+
 
 def current_user():
     u = session.get("user")
     return ADMINS.get(u)
 
+
 @app.context_processor
 def inject_user():
     return {"current_user": current_user()}
+
 
 # Generate nonce for CSP
 @app.before_request
@@ -188,35 +215,39 @@ def generate_nonce():
     """Generate a unique nonce for Content Security Policy"""
     g.nonce = secrets.token_urlsafe(16)
 
+
 # Session management with sliding expiration
 @app.before_request
 def extend_session():
     """
     Implement sliding session expiration - extends session timeout on user activity.
-    This provides better security (30min timeout) with improved usability 
+    This provides better security (30min timeout) with improved usability
     (active users stay logged in automatically).
     """
-    if 'user' in session:
+    if "user" in session:
         # Make session permanent and mark as modified to extend expiration
         session.permanent = True
         session.modified = True
-        
+
         # Log session activity for security monitoring (optional)
         try:
-            username = session.get('user', 'unknown')
+            username = session.get("user", "unknown")
             current_app.logger.debug(f"Session extended for user: {username}")
         except Exception:
             # Fail silently if logging fails
             pass
 
+
 # Security headers
 @app.after_request
 def security_headers(response):
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'DENY'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-    response.headers['Content-Security-Policy'] = (
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=31536000; includeSubDomains"
+    )
+    response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         "style-src 'self' cdn.jsdelivr.net; "
         f"script-src 'self' cdn.jsdelivr.net 'nonce-{g.nonce}'; "
@@ -224,6 +255,7 @@ def security_headers(response):
         "font-src 'self' cdn.jsdelivr.net"
     )
     return response
+
 
 # -----------------------------
 # Auth helpers
@@ -234,7 +266,9 @@ def login_required(view):
         if not session.get("user"):
             return redirect(url_for("login", next=request.path))
         return view(*args, **kwargs)
+
     return wrapped
+
 
 @app.route("/login", methods=["GET", "POST"])
 @limiter.limit("5 per minute")
@@ -244,10 +278,12 @@ def login():
         password = request.form.get("password") or ""
         totp_token = (request.form.get("totp_token") or "").strip()
         backup_code = (request.form.get("backup_code") or "").strip()
-        
+
         # Step 1: Verify username/password OR check pending 2FA
         pending_user = session.get("pending_2fa_user")
-        if verify_admin(username, password) or (password == "verified" and pending_user == username):
+        if verify_admin(username, password) or (
+            password == "verified" and pending_user == username
+        ):
             # Step 2: Check if 2FA is enabled
             if totp_service.is_2fa_enabled(username):
                 # 2FA is enabled - require TOTP token or backup code
@@ -261,7 +297,11 @@ def login():
                         dest = request.args.get("next") or url_for("index")
                         # Proper open-redirect protection
                         parsed = urlparse(dest)
-                        if parsed.netloc or not dest.startswith('/') or dest.startswith('//'):
+                        if (
+                            parsed.netloc
+                            or not dest.startswith("/")
+                            or dest.startswith("//")
+                        ):
                             dest = url_for("index")
                         return redirect(dest)
                     else:
@@ -276,7 +316,11 @@ def login():
                         dest = request.args.get("next") or url_for("index")
                         # Proper open-redirect protection
                         parsed = urlparse(dest)
-                        if parsed.netloc or not dest.startswith('/') or dest.startswith('//'):
+                        if (
+                            parsed.netloc
+                            or not dest.startswith("/")
+                            or dest.startswith("//")
+                        ):
                             dest = url_for("index")
                         return redirect(dest)
                     else:
@@ -293,15 +337,16 @@ def login():
                 dest = request.args.get("next") or url_for("index")
                 # Proper open-redirect protection
                 parsed = urlparse(dest)
-                if parsed.netloc or not dest.startswith('/') or dest.startswith('//'):
+                if parsed.netloc or not dest.startswith("/") or dest.startswith("//"):
                     dest = url_for("index")
                 return redirect(dest)
         else:
             flash("Invalid username or password.", "error")
-    
+
     # Clear any pending 2FA state
     session.pop("pending_2fa_user", None)
     return render_template("login.html")
+
 
 @app.route("/logout")
 @login_required
@@ -310,14 +355,18 @@ def logout():
     flash("Signed out.", "success")
     return redirect(url_for("login"))
 
+
 # Serve favicon to avoid noisy 404 tracebacks
 @app.route("/favicon.ico")
 def favicon():
     static_dir = os.path.join(app.root_path, "static")
     path = os.path.join(static_dir, "favicon.ico")
     if os.path.isfile(path):
-        return send_from_directory(static_dir, "favicon.ico", mimetype="image/vnd.microsoft.icon")
+        return send_from_directory(
+            static_dir, "favicon.ico", mimetype="image/vnd.microsoft.icon"
+        )
     return ("", 204)
+
 
 # -----------------------------
 # Profile + password change
@@ -329,6 +378,7 @@ def account():
     if not user:
         return redirect(url_for("login"))
     return render_template("accounts.html", user=user)
+
 
 @app.post("/account/password")
 @login_required
@@ -361,6 +411,7 @@ def account_change_password():
         flash(f"{user_message} (ID: {correlation_id})", "error")
         return redirect(url_for("account"))
 
+
 # --------------------------
 # 2FA Management Routes
 # --------------------------
@@ -371,11 +422,12 @@ def account_2fa():
     user = current_user()
     if not user:
         return redirect(url_for("login"))
-    
+
     username = user["username"]
     status = totp_service.get_user_2fa_status(username)
-    
+
     return render_template("account_2fa.html", user=user, status=status)
+
 
 @app.route("/account/2fa/setup", methods=["GET", "POST"])
 @login_required
@@ -384,23 +436,24 @@ def setup_2fa():
     user = current_user()
     if not user:
         return redirect(url_for("login"))
-    
+
     username = user["username"]
-    
+
     if request.method == "POST":
         verification_code = (request.form.get("verification_code") or "").strip()
-        
+
         if totp_service.enable_2fa(username, verification_code):
             flash("2FA has been enabled successfully!", "success")
             return redirect(url_for("account_2fa"))
         else:
             flash("Invalid verification code. Please try again.", "error")
-    
+
     # Generate secret if not exists
     if not totp_service.get_secret(username):
         totp_service.generate_secret(username)
-    
+
     return render_template("setup_2fa.html", user=user)
+
 
 @app.route("/account/2fa/qr")
 @login_required
@@ -409,17 +462,19 @@ def get_2fa_qr():
     user = current_user()
     if not user:
         return redirect(url_for("login"))
-    
+
     try:
         username = user["username"]
         qr_image = totp_service.generate_qr_code(username)
-        
+
         from flask import Response
-        return Response(qr_image, mimetype='image/png')
+
+        return Response(qr_image, mimetype="image/png")
     except Exception as e:
         user_message, correlation_id = handle_api_error(e, "generating QR code")
         flash(f"{user_message} (ID: {correlation_id})", "error")
         return redirect(url_for("setup_2fa"))
+
 
 @app.route("/account/2fa/disable", methods=["POST"])
 @login_required
@@ -428,19 +483,20 @@ def disable_2fa():
     user = current_user()
     if not user:
         return redirect(url_for("login"))
-    
+
     # Verify current password for security
     current_password = request.form.get("current_password") or ""
     if not verify_admin(user["username"], current_password):
         flash("Current password is incorrect.", "error")
         return redirect(url_for("account_2fa"))
-    
+
     if totp_service.disable_2fa(user["username"]):
         flash("2FA has been disabled.", "warning")
     else:
         flash("Failed to disable 2FA.", "error")
-    
+
     return redirect(url_for("account_2fa"))
+
 
 @app.route("/account/2fa/backup-codes")
 @login_required
@@ -449,14 +505,15 @@ def view_backup_codes():
     user = current_user()
     if not user:
         return redirect(url_for("login"))
-    
+
     username = user["username"]
     if not totp_service.is_2fa_enabled(username):
         flash("2FA is not enabled.", "error")
         return redirect(url_for("account_2fa"))
-    
+
     backup_codes = totp_service.get_backup_codes(username)
     return render_template("backup_codes.html", user=user, backup_codes=backup_codes)
+
 
 @app.route("/account/2fa/regenerate-backup-codes", methods=["POST"])
 @login_required
@@ -465,26 +522,29 @@ def regenerate_backup_codes():
     user = current_user()
     if not user:
         return redirect(url_for("login"))
-    
+
     username = user["username"]
     if not totp_service.is_2fa_enabled(username):
         flash("2FA is not enabled.", "error")
         return redirect(url_for("account_2fa"))
-    
+
     # Verify current password for security
     current_password = request.form.get("current_password") or ""
     if not verify_admin(username, current_password):
         flash("Current password is incorrect.", "error")
         return redirect(url_for("account_2fa"))
-    
+
     try:
         new_codes = totp_service.regenerate_backup_codes(username)
         flash("New backup codes generated. Please save them securely.", "success")
-        return render_template("backup_codes.html", user=user, backup_codes=new_codes, regenerated=True)
+        return render_template(
+            "backup_codes.html", user=user, backup_codes=new_codes, regenerated=True
+        )
     except Exception as e:
         user_message, correlation_id = handle_api_error(e, "regenerating backup codes")
         flash(f"{user_message} (ID: {correlation_id})", "error")
         return redirect(url_for("account_2fa"))
+
 
 # --------------------------
 # Monitor Page
@@ -495,10 +555,12 @@ def monitor_page():
     data = monitor.monitor_snapshot()
     return render_template("monitor.html", data=data)
 
+
 @app.route("/api/monitor")
 @login_required
 def monitor_api():
     return jsonify(monitor.monitor_snapshot())
+
 
 # --------------------------
 # Firewall Page
@@ -518,13 +580,13 @@ def firewall_page():
 
         elif action == "add_rule":
             rule_name = request.form.get("rule_name") or None
-            src_ip    = request.form.get("src_ip") or None
-            dst_ip    = request.form.get("dst_ip") or None
-            dst_port  = request.form.get("dst_port") or None
-            proto     = request.form.get("proto") or "tcp"
-            position  = request.form.get("position") or "append"
+            src_ip = request.form.get("src_ip") or None
+            dst_ip = request.form.get("dst_ip") or None
+            dst_port = request.form.get("dst_port") or None
+            proto = request.form.get("proto") or "tcp"
+            position = request.form.get("position") or "append"
             rule_action = request.form.get("action_type") or "TRUST"
-            index     = request.form.get("index")
+            index = request.form.get("index")
             if index:
                 try:
                     index = int(index)
@@ -539,7 +601,7 @@ def firewall_page():
                 action=rule_action,
                 position=position,
                 index=index,
-                name=rule_name
+                name=rule_name,
             )
             if success:
                 persist_vpnfw_table()
@@ -554,13 +616,13 @@ def firewall_page():
                 return redirect(url_for("firewall_page"))
 
             rule_name = request.form.get("rule_name") or None
-            src_ip    = request.form.get("src_ip") or None
-            dst_ip    = request.form.get("dst_ip") or None
-            dst_port  = request.form.get("dst_port") or None
-            proto     = request.form.get("proto") or "tcp"
-            position  = request.form.get("position") or "append"
+            src_ip = request.form.get("src_ip") or None
+            dst_ip = request.form.get("dst_ip") or None
+            dst_port = request.form.get("dst_port") or None
+            proto = request.form.get("proto") or "tcp"
+            position = request.form.get("position") or "append"
             rule_action = request.form.get("action_type") or "TRUST"
-            index     = request.form.get("index")
+            index = request.form.get("index")
             if index:
                 try:
                     index = int(index)
@@ -576,7 +638,7 @@ def firewall_page():
                 action=rule_action,
                 position=position,
                 index=index,
-                name=rule_name
+                name=rule_name,
             )
             if ok:
                 persist_vpnfw_table()
@@ -599,6 +661,7 @@ def firewall_page():
     rules = firewall.list_rules_table()
     return render_template("firewall.html", rules=rules)
 
+
 # -----------------------------
 # Main Dashboard
 # -----------------------------
@@ -607,6 +670,7 @@ def firewall_page():
 def index():
     topology = core.load_topology()
     return render_template("index.html", topology=topology)
+
 
 # -----------------------------
 # Add Remote Site
@@ -619,8 +683,11 @@ def add_spoke():
     lan_subnet_raw = (request.form.get("lan_subnet") or "").strip()
     lan_subnet = lan_subnet_raw if lan_subnet_raw else None
 
-    if not name or not re.match(r'^[a-zA-Z0-9_-]{1,20}$', name):
-        flash("Invalid spoke name: only alphanumeric, dash, underscore allowed (max 20 chars)", "error")
+    if not name or not re.match(r"^[a-zA-Z0-9_-]{1,20}$", name):
+        flash(
+            "Invalid spoke name: only alphanumeric, dash, underscore allowed (max 20 chars)",
+            "error",
+        )
         return redirect(url_for("index"))
 
     try:
@@ -648,7 +715,7 @@ def add_hub_lan():
     if not lan_subnets:
         flash("LAN subnet(s) are required", "error")
         return redirect(url_for("index"))
-    
+
     try:
         core.add_hub_lan(lan_subnets)
         flash("Hub LAN(s) added successfully!", "success")
@@ -658,14 +725,15 @@ def add_hub_lan():
         flash(f"{user_message} (ID: {correlation_id})", "error")
         return redirect(url_for("index"))
 
+
 @app.post("/remove-hub-lan")
-@login_required  
+@login_required
 def remove_hub_lan():
     lan_subnet = (request.form.get("lan_subnet") or "").strip()
     if not lan_subnet:
         flash("LAN subnet is required", "error")
         return redirect(url_for("index"))
-    
+
     try:
         core.remove_hub_lan(lan_subnet)
         flash("Hub LAN removed successfully!", "success")
@@ -675,6 +743,7 @@ def remove_hub_lan():
         flash(f"{user_message} (ID: {correlation_id})", "error")
         return redirect(url_for("index"))
 
+
 @app.post("/edit-vpn-subnet")
 @login_required
 def edit_vpn_subnet():
@@ -682,10 +751,13 @@ def edit_vpn_subnet():
     if not vpn_subnet:
         flash("VPN subnet is required", "error")
         return redirect(url_for("index"))
-    
+
     try:
         core.edit_vpn_subnet(vpn_subnet)
-        flash("VPN subnet updated successfully! Please reconfigure all clients.", "success")
+        flash(
+            "VPN subnet updated successfully! Please reconfigure all clients.",
+            "success",
+        )
         return redirect(url_for("index"))
     except ValueError as e:
         flash(str(e), "error")
@@ -693,6 +765,7 @@ def edit_vpn_subnet():
     except Exception as e:
         flash(f"Failed to update VPN subnet: {str(e)}", "error")
         return redirect(url_for("index"))
+
 
 # -----------------------------
 # Config Management
@@ -704,6 +777,7 @@ def regenerate():
     core.regenerate_all()
     flash("Configuration regenerated successfully!", "success")
     return redirect(url_for("index"))
+
 
 @app.route("/restart", methods=["GET", "POST"])
 @limiter.limit("1 per minute")
@@ -718,6 +792,7 @@ def restart():
         flash("Service restart failed. Check logs.", "danger")
     return redirect(url_for("index"))
 
+
 @app.route("/regenerate/hub", methods=["POST"])
 @limiter.limit("3 per minute")
 @login_required
@@ -727,6 +802,7 @@ def regen_hub_keys():
     else:
         flash("Failed to regenerate hub keys", "error")
     return redirect(url_for("index"))
+
 
 @app.route("/regenerate/spoke/<name>", methods=["POST"])
 @limiter.limit("3 per minute")
@@ -738,6 +814,7 @@ def regen_spoke_keys(name):
         flash(f"Failed to regenerate keys for spoke {name}", "error")
     return redirect(url_for("index"))
 
+
 @app.route("/delete/<name>", methods=["POST"])
 @limiter.limit("5 per minute")
 @login_required
@@ -748,6 +825,7 @@ def delete_spoke(name):
         flash(f"Failed to delete spoke {name}", "error")
     return redirect(url_for("index"))
 
+
 # -----------------------------
 # Download Config
 # -----------------------------
@@ -756,7 +834,7 @@ def delete_spoke(name):
 @login_required
 def download_spoke(name):
     # Validate filename to prevent path traversal
-    if not re.match(r'^[a-zA-Z0-9_-]+$', name):
+    if not re.match(r"^[a-zA-Z0-9_-]+$", name):
         flash("Invalid spoke name", "error")
         return redirect(url_for("index"))
     config_dir = os.path.join(core.ROOT_DIR, "configs")
@@ -768,6 +846,7 @@ def download_spoke(name):
         flash(f"No config file found for {name}", "error")
         return redirect(url_for("index"))
 
+
 # --------------------------
 # Suricata / IPS Events (UI)
 # --------------------------
@@ -775,8 +854,10 @@ def download_spoke(name):
 @login_required
 def suricata_page():
     from src.core.suricata import read_eve
+
     alerts = read_eve(n=200, history=True)
     return render_template("suricata.html", alerts=alerts)
+
 
 # --------------------------
 # Suricata / IPS Events
@@ -786,6 +867,7 @@ def suricata_page():
 def api_suricata_eve():
     n = request.args.get("n", type=int, default=200)
     from src.core.suricata import read_eve
+
     return jsonify({"alerts": read_eve(n=n, history=True)})
 
 
@@ -793,21 +875,22 @@ def api_suricata_eve():
 @login_required
 def api_suricata_status():
     from src.core.suricata import get_suricata_mode, get_suricata_status
-    return jsonify({
-        "mode": get_suricata_mode(),
-        "status": get_suricata_status()
-    })
+
+    return jsonify({"mode": get_suricata_mode(), "status": get_suricata_status()})
 
 
 @app.post("/api/suricata/clear")
 @login_required
 def api_suricata_clear():
     from src.core.suricata import clear_alert_cache
+
     success = clear_alert_cache()
     return jsonify({"success": success})
 
+
 # Suricata control endpoints removed due to NoNewPrivileges=true security constraint
 # Manual control: SSH → sudo systemctl start/stop/restart suricata
+
 
 # -----------------------------
 # Secure Peer Ping API
@@ -820,90 +903,109 @@ def api_ping_peer():
     """
     try:
         # 1. Rate limiting protection
-        current_username = session.get('user')
-        if not _check_ping_rate_limit(current_username, max_requests=10, window_seconds=60):
-            return jsonify({"error": "Rate limit exceeded. Try again in a minute."}), 429
-        
+        current_username = session.get("user")
+        if not _check_ping_rate_limit(
+            current_username, max_requests=10, window_seconds=60
+        ):
+            return (
+                jsonify({"error": "Rate limit exceeded. Try again in a minute."}),
+                429,
+            )
+
         # 2. Validate request format
         if not request.is_json:
             return jsonify({"error": "Invalid request format"}), 400
-        
+
         # 3. Extract and validate spoke name
-        spoke_name = request.json.get('spoke_name', '').strip()
-        if not spoke_name or not re.match(r'^[a-zA-Z0-9_-]{1,20}$', spoke_name):
+        spoke_name = request.json.get("spoke_name", "").strip()
+        if not spoke_name or not re.match(r"^[a-zA-Z0-9_-]{1,20}$", spoke_name):
             return jsonify({"error": "Invalid spoke name"}), 400
-        
+
         # 4. Load topology and validate spoke exists
         topology = core.load_topology()
-        if not topology or 'spokes' not in topology:
+        if not topology or "spokes" not in topology:
             return jsonify({"error": "No topology configuration"}), 500
-        
+
         # 5. Find spoke in topology (whitelist validation)
         target_spoke = None
-        for spoke in topology['spokes']:
-            if spoke.get('name') == spoke_name:
+        for spoke in topology["spokes"]:
+            if spoke.get("name") == spoke_name:
                 target_spoke = spoke
                 break
-        
+
         if not target_spoke:
             return jsonify({"error": "Spoke not found in topology"}), 400
-        
+
         # 6. Validate VPN IP exists and is valid
-        vpn_ip_raw = target_spoke.get('vpn_ip', '').strip()
+        vpn_ip_raw = target_spoke.get("vpn_ip", "").strip()
         if not vpn_ip_raw:
-            current_app.logger.warning(f"Ping request for spoke {spoke_name}: No VPN IP configured")
+            current_app.logger.warning(
+                f"Ping request for spoke {spoke_name}: No VPN IP configured"
+            )
             return jsonify({"error": "Spoke has no VPN IP configured"}), 400
-        
+
         if not _validate_vpn_ip(vpn_ip_raw):
-            current_app.logger.warning(f"Ping request validation failed: spoke={spoke_name}, ip={vpn_ip_raw}")
+            current_app.logger.warning(
+                f"Ping request validation failed: spoke={spoke_name}, ip={vpn_ip_raw}"
+            )
             return jsonify({"error": f"Invalid VPN IP address: {vpn_ip_raw}"}), 400
-        
+
         # Clean IP for ping (remove /32 if present)
-        ping_ip = vpn_ip_raw.split('/')[0] if '/' in vpn_ip_raw else vpn_ip_raw
-        
+        ping_ip = vpn_ip_raw.split("/")[0] if "/" in vpn_ip_raw else vpn_ip_raw
+
         # 7. Execute secure ping (no shell injection possible)
         try:
-            result = subprocess.run([
-                "/bin/ping", "-c", "1", "-W", "2", ping_ip
-            ], capture_output=True, timeout=5, text=True, check=False, shell=False)
-            
+            result = subprocess.run(
+                ["/bin/ping", "-c", "1", "-W", "2", ping_ip],
+                capture_output=True,
+                timeout=5,
+                text=True,
+                check=False,
+                shell=False,
+            )
+
             success = result.returncode == 0
             response_time = _parse_ping_time(result.stdout) if success else None
-            
+
             result_data = {
                 "success": True,
                 "spoke_name": spoke_name,
                 "vpn_ip": ping_ip,
                 "reachable": success,
                 "response_time": response_time,
-                "message": f"Peer reachable ({response_time}ms)" if success else "Peer unreachable (offline or blocking ping)",
-                "timestamp": int(time.time())
+                "message": (
+                    f"Peer reachable ({response_time}ms)"
+                    if success
+                    else "Peer unreachable (offline or blocking ping)"
+                ),
+                "timestamp": int(time.time()),
             }
-            
+
             # Save result to persistent storage
             _save_ping_result(spoke_name, result_data)
-            
+
             return jsonify(result_data)
-            
+
         except subprocess.TimeoutExpired:
             timeout_result = {
                 "success": True,
-                "spoke_name": spoke_name, 
+                "spoke_name": spoke_name,
                 "vpn_ip": ping_ip,
                 "reachable": False,
                 "message": "Ping timeout - peer likely offline",
-                "timestamp": int(time.time())
+                "timestamp": int(time.time()),
             }
-            
+
             # Save timeout result to persistent storage
             _save_ping_result(spoke_name, timeout_result)
-            
+
             return jsonify(timeout_result)
-            
+
     except Exception as e:
         sanitized_error = ErrorHandler._sanitize_message(str(e))
         current_app.logger.error(f"Ping API error: {sanitized_error}")
         return jsonify({"error": "Internal server error"}), 500
+
 
 # -----------------------------
 # Ping Results Retrieval API
@@ -919,6 +1021,7 @@ def api_ping_results():
         sanitized_error = ErrorHandler._sanitize_message(str(e))
         current_app.logger.error(f"Failed to load ping results: {sanitized_error}")
         return jsonify({"error": "Failed to load ping results"}), 500
+
 
 # -----------------------------
 # QR
@@ -939,9 +1042,9 @@ def api_spoke_config(name):
         current_app.logger.error(f"QR config load failed for {name}: {sanitized_error}")
         return jsonify({"error": "internal", "detail": str(e)}), 500
 
+
 # -----------------------------
 # Main Entrypoint
 # -----------------------------
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8080, debug=True)
-
