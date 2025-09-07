@@ -3,16 +3,62 @@
 # Usage: sudo ./init.sh [APP_DIR]   # default /opt/yggsec
 set -euo pipefail
 
-# Installation warning and safeguards
+# Comprehensive installation prompt and instructions
 echo "============================================================"
-echo "            YggSec Installation - IMPORTANT NOTICE"
+echo "               YggSec WG Installation Setup"
 echo "============================================================"
-echo "WARNING: DO NOT INTERRUPT THIS INSTALLATION PROCESS"
-echo "WARNING: Canceling or shutting down may corrupt system services"
-echo "WARNING: This process takes 3-10 minutes depending on network speed"
-echo "WARNING: Please wait for completion before using Ctrl+C"
 echo ""
+echo "BEFORE PROCEEDING, PLEASE READ THE FOLLOWING INSTRUCTIONS:"
+echo ""
+echo "SYSTEM REQUIREMENTS:"
+echo "• Ubuntu 20.04+ or Debian 11+ (recommended: Ubuntu 24.04)"
+echo "• Root/sudo access required"
+echo "• Minimum 1GB RAM, 2GB disk space"
+echo "• Internet connection for package downloads (~200MB)"
+echo ""
+echo "WHAT THIS INSTALLATION WILL DO:"
+echo "• Install WireGuard VPN, nftables firewall, Suricata IPS"
+echo "• Create yggsec system user and service"
+echo "• Configure nginx reverse proxy on port 80"
+echo "• Set up systemd service for automatic startup"
+echo "• Install Python dependencies and web interface"
+echo "• Configure network interfaces and firewall rules"
+echo ""
+echo "INSTALLATION PROCESS:"
+echo "• Duration: 3-10 minutes (depending on network speed)"
+echo "• Downloads: ~200MB of packages from Ubuntu/Debian repositories"
+echo "• Creates files in: ${1:-/opt/yggsec}, /var/log/yggsec, /etc/systemd/system"
+echo "• Modifies: /etc/sudoers.d/, /etc/nginx/, network configuration"
+echo ""
+echo "IMPORTANT WARNINGS:"
+echo "⚠️  DO NOT INTERRUPT this installation once started"
+echo "⚠️  Interruption may leave system in inconsistent state"
+echo "⚠️  Ensure stable network connection before proceeding"
+echo "⚠️  This will modify system network and firewall settings"
+echo "⚠️  Have console/physical access available in case of issues"
+echo ""
+echo "POST-INSTALLATION:"
+echo "• Access web interface at: https://YOUR_SERVER_IP"
+echo "• Default login will be provided at end of installation"
+echo "• Configure WireGuard VPN through web interface"
+echo "• Review firewall rules and adjust as needed"
+echo ""
+echo "============================================================"
+echo ""
+echo "By proceeding, you acknowledge that you have:"
+echo "✓ Read and understood the above requirements and warnings"
+echo "✓ Verified this server meets the system requirements"
+echo "✓ Ensured you have stable network connectivity"
+echo "✓ Have console/physical access to this server if needed"
+echo "✓ Made appropriate backups of existing configurations"
+echo ""
+read -p "Press ENTER to acknowledge and proceed with installation, or Ctrl+C to cancel: "
+echo ""
+echo "============================================================"
+echo "            YggSec Installation - STARTING"
+echo "============================================================"
 echo "Installing to: ${1:-/opt/yggsec}"
+echo "Please wait for completion - this may take several minutes..."
 echo "============================================================"
 echo ""
 
@@ -38,39 +84,19 @@ apt-get update -y > /dev/null 2>&1
 
 echo "Installing core packages (WireGuard, nginx, Suricata IPS)..."
 echo "    This step downloads ~200MB and may take several minutes"
-echo "    Installing packages, please wait..."
 
-# Show a spinner while apt runs
 apt-get install -y \
   python3-venv python3-pip rsync jq \
   wireguard-tools nftables suricata suricata-update \
   netplan.io iputils-ping net-tools \
   openssh-client openssh-server \
   nginx openssl \
-  conntrack > /dev/null 2>&1 &
+  conntrack
 
-# Capture the PID of apt-get
-APT_PID=$!
-
-# Show progress while apt is running
-spinner() {
-  local delay=1
-  while kill -0 $APT_PID 2>/dev/null; do
-    printf "\r    Installing packages... (in progress)"
-    sleep $delay
-  done
-  printf "\r    [DONE] Installing packages...          "
-}
-
-spinner
-wait $APT_PID
-APT_RESULT=$?
-
-echo  # New line after spinner
-if [ $APT_RESULT -eq 0 ]; then
+if [ $? -eq 0 ]; then
   echo "[OK] Package installation complete - all dependencies installed successfully"
 else
-  echo "[ERROR] Package installation failed - check network connection"
+  echo "[ERROR] Package installation failed - check network connection and try again"
   exit 1
 fi
 
@@ -123,17 +149,7 @@ python3 -m venv "$VENV_DIR" > /dev/null 2>&1
 "$VENV_DIR/bin/pip" install --upgrade pip wheel > /dev/null 2>&1
 if [ -f "$APP_DIR/requirements.txt" ]; then
   echo "Installing Python dependencies (Flask, security tools)..."
-  "$VENV_DIR/bin/pip" install -r "$APP_DIR/requirements.txt" > /dev/null 2>&1 &
-  PIP_PID=$!
-  
-  # Show progress for pip installation
-  while kill -0 $PIP_PID 2>/dev/null; do
-    printf "\r    Installing Python packages... (in progress)"
-    sleep 1
-  done
-  printf "\r    [DONE] Installing Python packages...          "
-  echo  # New line
-  wait $PIP_PID
+  "$VENV_DIR/bin/pip" install -r "$APP_DIR/requirements.txt"
 fi
 "$VENV_DIR/bin/pip" show gunicorn >/dev/null 2>&1 || "$VENV_DIR/bin/pip" install gunicorn > /dev/null 2>&1
 echo "[OK] Python environment ready"
