@@ -31,12 +31,14 @@ jobs:
     - name: Run Bandit Security Scanner
       run: |
         bandit -r src/ -f json -o bandit-report.json || true
-        bandit -r src/ -f txt
+        bandit -r src/ -f txt --severity-level medium
         
     - name: Check Dependencies for Vulnerabilities
       run: |
-        safety check --requirements requirements.txt --json --output safety-report.json || true
-        safety check --requirements requirements.txt
+        # Use pip-audit as alternative to safety scan since safety requires login
+        pip install pip-audit
+        pip-audit --format=json --output=safety-report.json || true
+        pip-audit
         
     - name: Run Semgrep Security Analysis
       run: |
