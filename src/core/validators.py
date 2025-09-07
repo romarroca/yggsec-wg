@@ -78,6 +78,66 @@ class NetworkValidator:
         except ValueError as e:
             raise ValidationError(f"Invalid IP address: {str(e)}")
 
+    @staticmethod
+    def validate_public_endpoint(endpoint: str) -> bool:
+        """
+        Validate public endpoint (IPv4 address or FQDN).
+        Accepts IPv4 addresses and FQDNs with only hyphens and dots as special chars.
+
+        Args:
+            endpoint: IP address or FQDN string to validate
+
+        Returns:
+            bool: True if valid
+
+        Raises:
+            ValidationError: If endpoint is invalid
+        """
+        if not endpoint or not isinstance(endpoint, str):
+            raise ValidationError("Public endpoint cannot be empty")
+
+        endpoint = endpoint.strip()
+        if not endpoint:
+            raise ValidationError("Public endpoint cannot be empty")
+
+        # Check length (reasonable limits)
+        if len(endpoint) > 253:  # Max FQDN length
+            raise ValidationError("Public endpoint too long (max 253 characters)")
+
+        # Try IPv4 address first
+        try:
+            ipaddress.IPv4Address(endpoint)
+            return True
+        except ValueError:
+            pass
+
+        # If it looks like an IP but isn't valid, reject it early
+        import re
+
+        if re.match(r"^\d+\.\d+", endpoint):
+            raise ValidationError("Invalid IP address format")
+
+        # Validate as FQDN - only allow alphanumeric, hyphens, and dots
+        if not re.match(r"^[a-zA-Z0-9.-]+$", endpoint):
+            raise ValidationError(
+                "FQDN can only contain letters, numbers, hyphens, and dots"
+            )
+
+        # Basic FQDN structure validation
+        parts = endpoint.split(".")
+        if len(parts) < 2:
+            raise ValidationError("FQDN must have at least one dot")
+
+        for part in parts:
+            if not part:
+                raise ValidationError("FQDN cannot have empty parts")
+            if len(part) > 63:
+                raise ValidationError("FQDN parts cannot exceed 63 characters")
+            if part.startswith("-") or part.endswith("-"):
+                raise ValidationError("FQDN parts cannot start or end with hyphens")
+
+        return True
+
 
 class WireGuardValidator:
     """WireGuard-specific validation"""

@@ -629,3 +629,27 @@ def edit_vpn_subnet(vpn_subnet: str):
     regenerate_all()
 
     return f"VPN subnet changed from {old_subnet} to {vpn_subnet}. All clients must be reconfigured."
+
+
+def edit_public_ip(public_ip: str):
+    """Edit the hub's public IP/FQDN. This will require all clients to be reconfigured."""
+    from src.core.validators import NetworkValidator
+
+    topo = load_topology()
+    if topo is None:
+        raise ValueError("No topology configuration found")
+
+    # Validate the public endpoint (IP or FQDN)
+    try:
+        NetworkValidator.validate_public_endpoint(public_ip)
+    except Exception as e:
+        raise ValueError(f"Invalid public IP/FQDN: {str(e)}")
+
+    # Update topology
+    old_public_ip = topo["hub"]["public_ip"]
+    topo["hub"]["public_ip"] = public_ip
+
+    save_topology(topo)
+    regenerate_all()
+
+    return f"Public IP changed from {old_public_ip} to {public_ip}. All clients must be reconfigured."

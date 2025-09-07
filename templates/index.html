@@ -65,7 +65,12 @@
     </div>
     <div class="card-body">
       {% if topology and topology.hub %}
-        <p><strong>Public IP:</strong> {{ topology.hub.public_ip }}</p>
+        <div class="d-flex align-items-center flex-wrap gap-2">
+          <p class="mb-0"><strong>Public IP:</strong> {{ topology.hub.public_ip }}</p>
+          <button class="btn btn-sm btn-icon ms-1" data-bs-toggle="modal" data-bs-target="#editPublicIpModal" data-bs-toggle="tooltip" data-bs-title="Edit public IP/FQDN">
+            <i class="bi bi-pencil"></i>
+          </button>
+        </div>
         {% if topology.hub.interface %}
           <p><strong>WireGuard Interface:</strong> 
             <span class="badge bg-info">{{ topology.hub.interface }}</span>
@@ -184,6 +189,32 @@
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-warning">Update VPN Subnet</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Public IP -->
+  <div class="modal fade" id="editPublicIpModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <form method="POST" action="/edit-public-ip" class="modal-content">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Public IP/FQDN</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Public IP or Domain Name</label>
+            <input type="text" class="form-control" name="public_ip" 
+                   value="{{ topology.hub.public_ip if topology and topology.hub else '' }}" 
+                   placeholder="e.g. 203.0.113.15 or vpn.example.com" required>
+            <div class="form-text">⚠️ Changing this will require reconfiguring all clients</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-warning">Update Public IP</button>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
         </div>
       </form>

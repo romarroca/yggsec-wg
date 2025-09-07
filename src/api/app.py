@@ -767,6 +767,30 @@ def edit_vpn_subnet():
         return redirect(url_for("index"))
 
 
+@app.post("/edit-public-ip")
+@limiter.limit("10 per minute")
+@login_required
+def edit_public_ip():
+    public_ip = (request.form.get("public_ip") or "").strip()
+    if not public_ip:
+        flash("Public IP/FQDN is required", "error")
+        return redirect(url_for("index"))
+
+    try:
+        core.edit_public_ip(public_ip)
+        flash(
+            "Public IP updated successfully! Please reconfigure all clients.",
+            "success",
+        )
+        return redirect(url_for("index"))
+    except ValueError as e:
+        flash(str(e), "error")
+        return redirect(url_for("index"))
+    except Exception as e:
+        flash(f"Failed to update public IP: {str(e)}", "error")
+        return redirect(url_for("index"))
+
+
 # -----------------------------
 # Config Management
 # -----------------------------

@@ -106,6 +106,7 @@ from ..core.core import add_spoke  # noqa: F401, E402
 from ..core.core import (
     add_hub_lan,
     delete_spoke,
+    edit_public_ip,
     edit_vpn_subnet,
     regenerate_all,
     regenerate_hub_keys,
