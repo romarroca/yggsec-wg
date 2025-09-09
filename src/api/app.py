@@ -54,6 +54,22 @@ csrf = CSRFProtect(app)
 limiter = Limiter(key_func=get_remote_address, default_limits=["100 per hour"])
 limiter.init_app(app)
 
+
+# Custom rate limit error handler
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return (
+        jsonify(
+            {
+                "error": "Request limit exceeded",
+                "message": "You are sending requests too quickly. Please wait a moment and try again.",
+                "type": "rate_limit",
+            }
+        ),
+        429,
+    )
+
+
 # Initialize TOTP service
 totp_service = TOTPService()
 
@@ -987,7 +1003,13 @@ def api_ping_peer():
             current_username, max_requests=10, window_seconds=60
         ):
             return (
-                jsonify({"error": "Rate limit exceeded. Try again in a minute."}),
+                jsonify(
+                    {
+                        "error": "Request limit exceeded",
+                        "message": "You are sending requests too quickly. Please wait a moment and try again.",
+                        "type": "rate_limit",
+                    }
+                ),
                 429,
             )
 
