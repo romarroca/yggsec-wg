@@ -43,12 +43,6 @@ YggSec WireG was developed and tested on **AWS EC2** with the following specific
 - **Virtualization**: HVM with ENA enabled
 - **Storage**: SSD Volume (EBS)
 
-**AWS Pricing Reference** (On-Demand):
-- Ubuntu base: ~$0.0208 USD/hour
-- Estimated monthly: ~$15 USD/month (24/7 operation)
-
-This configuration provides excellent performance for small to medium-scale VPN deployments and is well within AWS Free Tier eligible limits for new accounts.
-
 ### Package Dependencies
 
 The installation script will automatically install these packages:

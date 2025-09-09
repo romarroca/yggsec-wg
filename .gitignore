@@ -79,3 +79,6 @@ CLAUDE.md
 # Testing files
 test_nft_json.py
 cookiejar
+
+# Backup utility (keep local)
+scripts/yggsec-backup.sh
