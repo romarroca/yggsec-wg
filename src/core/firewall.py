@@ -358,8 +358,7 @@ def test_json_config_parsing():
 
 def persist_vpnfw_table():
     """Dump inet:vpnfw and persist to /etc/nftables.d/vpnfw.nft atomically."""
-    import os
-    import tempfile
+    from ..utils.utils import write_text_atomic
 
     ok, output = run_cmd(["nft", "-s", "list", "table", "inet", NFT_TABLE])
     if not ok:
@@ -369,33 +368,12 @@ def persist_vpnfw_table():
     if not validate_nft_output(output):
         return False, "Invalid firewall configuration data"
 
-    dst = "/etc/nftables.d/vpnfw.nft"
-    tmp_name = None
-
-    # Use secure temporary file with proper permissions
     try:
-        with tempfile.NamedTemporaryFile(
-            mode="w", dir="/etc/nftables.d", prefix=".vpnfw.nft.tmp.", delete=False
-        ) as tmp_file:
-            # Set secure permissions before writing
-            os.fchmod(tmp_file.fileno(), 0o644)
-            tmp_file.write(output)
-            tmp_file.flush()
-            os.fsync(tmp_file.fileno())
-            tmp_name = tmp_file.name
-
-        # Atomic move
-        os.replace(tmp_name, dst)
+        # Use the existing atomic write helper that handles permissions properly
+        write_text_atomic("/etc/nftables.d/vpnfw.nft", output, 0o644)
         return True, "persisted"
-
-    except (OSError, IOError):
-        # Clean up temp file on error
-        if tmp_name and os.path.exists(tmp_name):
-            try:
-                os.unlink(tmp_name)
-            except OSError:
-                pass  # Best effort cleanup
-        return False, "Failed to persist firewall configuration"
+    except (OSError, IOError) as e:
+        return False, f"Failed to persist firewall configuration: {str(e)}"
 
 
 def validate_ip(value):

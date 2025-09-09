@@ -57,6 +57,10 @@ sudo ln -sf "$APP_DIR/configs/${WG_IFACE}.conf" "/etc/wireguard/${WG_IFACE}.conf
 sudo chown root:root "/etc/wireguard/${WG_IFACE}.conf"
 sudo chmod 600 "/etc/wireguard/${WG_IFACE}.conf"
 
+# Fix nftables.d directory permissions for firewall rule persistence
+sudo install -d -m 0755 /etc/nftables.d
+sudo chown "$APP_USER:$APP_USER" /etc/nftables.d
+
 # Create topology.json if it doesn't exist
 if [ ! -f "$APP_DIR/topology.json" ]; then
   echo '{}' | sudo tee "$APP_DIR/topology.json" >/dev/null
