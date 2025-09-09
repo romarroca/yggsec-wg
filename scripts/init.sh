@@ -71,7 +71,6 @@ APP_GROUP="$APP_USER"
 SRC_DIR="$(pwd)"
 VENV_DIR="$APP_DIR/venv"
 SVC_NAME="yggsec.service"
-SUDOERS_FILE="/etc/sudoers.d/yggsec"
 LOG_DIR="/var/log/yggsec"
 NETPLAN_FILE="/etc/netplan/01-yggsec.yaml"
 BACKUP_DIR="/root/yggsec-backups"
@@ -311,16 +310,6 @@ fi
 netplan generate && netplan apply || echo "Warning: netplan apply failed, check $NETPLAN_FILE."
 echo "[OK] Network configuration applied"
 
-echo "[6/10] Minimal sudoers"
-cat > "$SUDOERS_FILE" <<'EOF'
-yggsec ALL=(root) NOPASSWD: \
-/usr/bin/wg, /usr/bin/wg-quick, /usr/sbin/ip, \
-/usr/sbin/nft, /usr/bin/systemctl start suricata, \
-/usr/bin/systemctl stop suricata, /usr/bin/systemctl restart suricata, \
-/usr/bin/suricata-update
-EOF
-chmod 440 "$SUDOERS_FILE"
-visudo -cf "$SUDOERS_FILE" >/dev/null
 
 echo "[7/10] Systemd unit"
 # Generate secure secret key if not set
