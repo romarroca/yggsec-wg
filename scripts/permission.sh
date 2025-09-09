@@ -27,7 +27,7 @@ Type=oneshot
 User=root
 ExecStartPre=-/usr/bin/wg-quick down %I
 ExecStart=/usr/bin/wg-quick up %I
-ExecStop=/usr/bin/wg-quick down %I
+ExecStop=-/usr/bin/wg-quick down %I
 RemainAfterExit=yes
 UNIT
 
