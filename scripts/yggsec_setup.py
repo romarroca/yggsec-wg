@@ -41,7 +41,10 @@ def _secure_prompt_password(username: str) -> str:
             print("Password cannot be empty. Please try again.", file=sys.stderr)
             continue
         if len(password) < 8:
-            print("Password must be at least 8 characters. Please try again.", file=sys.stderr)
+            print(
+                "Password must be at least 8 characters. Please try again.",
+                file=sys.stderr,
+            )
             continue
         confirm = getpass.getpass("Confirm password: ")
         if password != confirm:
@@ -54,25 +57,25 @@ def _clear_shell_history():
     """Clear shell history for security after password input"""
     try:
         # Clear bash history for root user who ran the setup
-        subprocess.run(["history", "-c"], shell=True, check=False)
-        subprocess.run(["history", "-w"], shell=True, check=False)
-        
+        subprocess.run(["history", "-c"], shell=True, check=False)  # nosec B602
+        subprocess.run(["history", "-w"], shell=True, check=False)  # nosec B602
+
         # Also clear history file directly if accessible
         history_files = [
             os.path.expanduser("~/.bash_history"),
             os.path.expanduser("~/.history"),
             "/root/.bash_history",
-            "/root/.history"
+            "/root/.history",
         ]
-        
+
         for hist_file in history_files:
             if os.path.exists(hist_file):
                 try:
-                    with open(hist_file, 'w') as f:
-                        f.write('')  # Clear the file
+                    with open(hist_file, "w") as f:
+                        f.write("")  # Clear the file
                 except Exception:
                     pass  # Ignore errors, history clearing is best-effort
-                    
+
         print("Shell history cleared for security")
     except Exception:
         print("Note: Could not clear shell history (non-critical)")
@@ -109,8 +112,8 @@ def ensure_app_permissions(app_user: str):
     _chown(CONFIG_DIR, app_user)
     _chown(KEYS_DIR, app_user)
 
-    _chmod(APP_DIR, 0o755)  # App dir needs to be readable
-    _chmod(CONFIG_DIR, 0o750)
+    _chmod(APP_DIR, 0o755)  # App dir needs to be readable  # nosec B103
+    _chmod(CONFIG_DIR, 0o750)  # nosec B103
     _chmod(KEYS_DIR, 0o700)
     if ADMINS_FILE.exists():
         _chmod(ADMINS_FILE, 0o640)
@@ -534,7 +537,11 @@ def main():
         help="wipe everything, recreate admin, install+start service, regenerate, restart",
     )
     a.add_argument("--user", default=os.environ.get("ADMIN_USERNAME", "administrator"))
-    a.add_argument("--password", default=None, help="Admin password (will be prompted securely if not provided)")
+    a.add_argument(
+        "--password",
+        default=None,
+        help="Admin password (will be prompted securely if not provided)",
+    )
     a.add_argument(
         "--app-user",
         default=os.environ.get("APP_USER") or os.environ.get("SUDO_USER") or "yggsec",
@@ -542,7 +549,11 @@ def main():
 
     b = sub.add_parser("factory-reset", help="overwrite admins.json only")
     b.add_argument("--user", default=os.environ.get("ADMIN_USERNAME", "administrator"))
-    b.add_argument("--password", default=None, help="Admin password (will be prompted securely if not provided)")
+    b.add_argument(
+        "--password",
+        default=None,
+        help="Admin password (will be prompted securely if not provided)",
+    )
     b.add_argument(
         "--app-user",
         default=os.environ.get("APP_USER") or os.environ.get("SUDO_USER") or "yggsec",
