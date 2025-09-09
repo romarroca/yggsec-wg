@@ -153,9 +153,10 @@ yggsec ALL=(root) NOPASSWD: \
 After installation, initialize the system:
 
 ```bash
-sudo ADMIN_USERNAME=administrator ADMIN_PASSWORD=your_secure_password \
-  /opt/yggsec/venv/bin/python /opt/yggsec/scripts/yggsec_setup.py factory-reset-all
+sudo /opt/yggsec/venv/bin/python /opt/yggsec/scripts/yggsec_setup.py factory-reset-all --user administrator
 ```
+
+You will be prompted securely to enter the admin password (input will be hidden).
 
 This will:
 - Create admin user account
@@ -201,11 +202,10 @@ sudo systemctl restart yggsec
 ### Admin Management
 ```bash
 # Reset admin password only
-sudo ADMIN_USERNAME=admin ADMIN_PASSWORD=newpassword \
-  /opt/yggsec/venv/bin/python /opt/yggsec/scripts/yggsec_setup.py factory-reset
+sudo /opt/yggsec/venv/bin/python /opt/yggsec/scripts/yggsec_setup.py factory-reset --user admin
 
-# Full factory reset (wipes all data)
-sudo /opt/yggsec/venv/bin/python /opt/yggsec/scripts/yggsec_setup.py factory-reset-all
+# Full factory reset (wipes all data)  
+sudo /opt/yggsec/venv/bin/python /opt/yggsec/scripts/yggsec_setup.py factory-reset-all --user administrator
 ```
 
 ### WireGuard Operations

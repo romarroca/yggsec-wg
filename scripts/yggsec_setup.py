@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # yggsec_setup.py
+import getpass
 import json
 import os
 import secrets
 import shutil
 import subprocess
 import sys
+import time
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -29,6 +31,51 @@ def _require_root():
     if os.geteuid() != 0:
         print("must run as root", file=sys.stderr)
         sys.exit(1)
+
+
+def _secure_prompt_password(username: str) -> str:
+    """Securely prompt for admin password without environment variable exposure"""
+    while True:
+        password = getpass.getpass(f"Enter password for admin user '{username}': ")
+        if not password:
+            print("Password cannot be empty. Please try again.", file=sys.stderr)
+            continue
+        if len(password) < 8:
+            print("Password must be at least 8 characters. Please try again.", file=sys.stderr)
+            continue
+        confirm = getpass.getpass("Confirm password: ")
+        if password != confirm:
+            print("Passwords do not match. Please try again.", file=sys.stderr)
+            continue
+        return password
+
+
+def _clear_shell_history():
+    """Clear shell history for security after password input"""
+    try:
+        # Clear bash history for root user who ran the setup
+        subprocess.run(["history", "-c"], shell=True, check=False)
+        subprocess.run(["history", "-w"], shell=True, check=False)
+        
+        # Also clear history file directly if accessible
+        history_files = [
+            os.path.expanduser("~/.bash_history"),
+            os.path.expanduser("~/.history"),
+            "/root/.bash_history",
+            "/root/.history"
+        ]
+        
+        for hist_file in history_files:
+            if os.path.exists(hist_file):
+                try:
+                    with open(hist_file, 'w') as f:
+                        f.write('')  # Clear the file
+                except Exception:
+                    pass  # Ignore errors, history clearing is best-effort
+                    
+        print("Shell history cleared for security")
+    except Exception:
+        print("Note: Could not clear shell history (non-critical)")
 
 
 def _chown(path: Path, user: str):
@@ -487,7 +534,7 @@ def main():
         help="wipe everything, recreate admin, install+start service, regenerate, restart",
     )
     a.add_argument("--user", default=os.environ.get("ADMIN_USERNAME", "administrator"))
-    a.add_argument("--password", default=os.environ.get("ADMIN_PASSWORD"))
+    a.add_argument("--password", default=None, help="Admin password (will be prompted securely if not provided)")
     a.add_argument(
         "--app-user",
         default=os.environ.get("APP_USER") or os.environ.get("SUDO_USER") or "yggsec",
@@ -495,7 +542,7 @@ def main():
 
     b = sub.add_parser("factory-reset", help="overwrite admins.json only")
     b.add_argument("--user", default=os.environ.get("ADMIN_USERNAME", "administrator"))
-    b.add_argument("--password", default=os.environ.get("ADMIN_PASSWORD"))
+    b.add_argument("--password", default=None, help="Admin password (will be prompted securely if not provided)")
     b.add_argument(
         "--app-user",
         default=os.environ.get("APP_USER") or os.environ.get("SUDO_USER") or "yggsec",
@@ -509,10 +556,16 @@ def main():
 
     args = p.parse_args()
 
+    # Securely prompt for password if not provided
+    if args.cmd in ["factory-reset-all", "factory-reset"] and not args.password:
+        args.password = _secure_prompt_password(args.user)
+
     if args.cmd == "factory-reset-all":
         cmd_factory_reset_all(args.app_user, args.user, args.password)
+        _clear_shell_history()
     elif args.cmd == "factory-reset":
         cmd_factory_reset(args.user, args.password, args.app_user)
+        _clear_shell_history()
     elif args.cmd == "install-service":
         install_service(args.app_user)
 

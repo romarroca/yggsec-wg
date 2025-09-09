@@ -110,8 +110,8 @@ YggSec WireG includes several security features:
 ### Recommended Settings
 
 ```bash
-# Secure admin password (minimum 32 characters)
-ADMIN_PASSWORD=$(openssl rand -base64 32)
+# Admin password will be prompted securely during setup
+# (minimum 8 characters required, longer passwords recommended)
 
 # Enable all security features
 sudo systemctl enable suricata
