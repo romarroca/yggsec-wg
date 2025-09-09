@@ -1,12 +1,9 @@
 # YggSec WireG
 
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-
 Secure WireGuard orchestration platform with built-in firewall and intrusion prevention system (IPS) capabilities.
 
-<img width="1695" height="1349" alt="image" src="https://github.com/user-attachments/assets/fae10917-547d-4772-8ded-3a3333d5794d" />
+<img width="1714" height="1141" alt="image" src="https://github.com/user-attachments/assets/704f10ad-4d98-4cf8-83f9-8b48c4457eec" />
 
-*Main dashboard showing WireGuard peers and network topology*
 
 ## Features
 
@@ -19,9 +16,9 @@ Secure WireGuard orchestration platform with built-in firewall and intrusion pre
 - **Security Hardened** - Rate limiting, secure sessions, systemd sandboxing
 - **QR Code Support** - Mobile client configuration via QR codes
 
-<img width="1697" height="1348" alt="image" src="https://github.com/user-attachments/assets/54e952aa-2b2c-4f02-b32f-f4a32c5f5830" />
+<img width="1712" height="1140" alt="image" src="https://github.com/user-attachments/assets/612666fb-2a4a-4139-8e7b-1cb5976cdcb3" />
 
-*Firewall rules management interface Dark Mode*
+*Firewall Dashboard*
 
 ## Requirements
 
@@ -91,10 +88,6 @@ sudo ./scripts/init.sh
    - Choose DHCP or static IP configuration
    - Configure optional LAN interface
 
-<img width="1223" height="1267" alt="image" src="https://github.com/user-attachments/assets/c506985b-9acb-4a4e-ad29-ecd900178462" />
-
-*Interactive installation interface selection*
-
 ### Manual Installation Options
 
 You can also specify custom installation directory:
@@ -159,7 +152,7 @@ Navigate to your server's IP address:
 - **HTTPS**: `https://your-server-ip`
 - **Login**: Use the admin credentials you set
 
-<img width="1698" height="1354" alt="image" src="https://github.com/user-attachments/assets/ac7ca5af-a9ff-4acb-a7c8-7ce639cabec9" />
+<img width="1710" height="1147" alt="image" src="https://github.com/user-attachments/assets/568bad5b-56bb-48e3-a299-e8d3a10800ba" />
 
 *Secure login interface*
 
@@ -169,10 +162,6 @@ Navigate to your server's IP address:
 2. Enter peer name and optional LAN subnet
 3. Download configuration or scan QR code
 4. Configure client device
-
-<img width="1688" height="1349" alt="image" src="https://github.com/user-attachments/assets/c0b49bb9-a342-422a-88af-73a90ca77315" />
-
-*VPN peer configuration and QR code generation*
 
 ## Management Commands
 
@@ -230,8 +219,7 @@ sudo systemctl status wg-quick@wg0
 - Bandwidth usage tracking
 - Active connection monitoring
 
-<img width="1692" height="1357" alt="image" src="https://github.com/user-attachments/assets/7bd3f743-0a1d-4ac3-97cc-07140a3f1492" />
-
+<img width="1715" height="1144" alt="image" src="https://github.com/user-attachments/assets/7895d620-70f7-42ae-ad64-c5402716a484" />
 
 ### Intrusion Prevention
 - Real-time Suricata alerts
@@ -239,10 +227,9 @@ sudo systemctl status wg-quick@wg0
 - Traffic analysis and blocking
 - Event logging and retention
 
-<img width="1704" height="1352" alt="image" src="https://github.com/user-attachments/assets/ea269dde-7421-4d9d-ac31-d87d8d9a37ba" />
+<img width="1716" height="1141" alt="image" src="https://github.com/user-attachments/assets/52acd473-544d-459a-8766-9d32043c88d6" />
 
-
-*Real-time network monitoring and IPS alerts*
+*IPS alerts*
 
 ## Troubleshooting
 
