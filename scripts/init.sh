@@ -28,7 +28,7 @@ echo "INSTALLATION PROCESS:"
 echo "• Duration: 3-10 minutes (depending on network speed)"
 echo "• Downloads: ~200MB of packages from Ubuntu/Debian repositories"
 echo "• Creates files in: ${1:-/opt/yggsec}, /var/log/yggsec, /etc/systemd/system"
-echo "• Modifies: /etc/sudoers.d/, /etc/nginx/, network configuration"
+echo "• Modifies: /etc/nginx/, network configuration"
 echo ""
 echo "IMPORTANT WARNINGS:"
 echo "⚠️  DO NOT INTERRUPT this installation once started"
@@ -334,14 +334,20 @@ RuntimeDirectoryMode=0755
 # Least-privilege caps for wg/nft/ip
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
+NoNewPrivileges=true
 
 # Filesystem hardening
 ProtectSystem=full
 ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
 ReadWritePaths=$APP_DIR /etc/wireguard /etc/nftables.d $LOG_DIR /run/wireguard
 
 PrivateTmp=true
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+RestrictNamespaces=true
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources
 
 [Install]
 WantedBy=multi-user.target
