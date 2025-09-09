@@ -83,9 +83,9 @@ YggSec WireG includes several security features:
 
 ### Authentication & Authorization
 - Session-based authentication with timeout
-- CSRF protection on all forms
 - Rate limiting on login attempts
 - Secure password hashing (Werkzeug)
+- Systemd process sandboxing
 
 ### Network Security
 - HTTPS-only web interface

@@ -1,5 +1,5 @@
 """
-Input validation utilities following CLAUDE.md security principles
+Input validation utilities following secure coding principles
 Centralized validation logic for consistency and security
 """
 

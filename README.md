@@ -16,7 +16,7 @@ Secure WireGuard orchestration platform with built-in firewall and intrusion pre
 - **Network Monitoring** - Connection tracking and bandwidth usage
 - **Hub & Spoke Topology** - Centralized VPN architecture with peer-to-peer communication
 - **Dark/Light Theme** - Modern responsive web interface
-- **Security Hardened** - CSRF protection, rate limiting, secure sessions
+- **Security Hardened** - Rate limiting, secure sessions, systemd sandboxing
 - **QR Code Support** - Mobile client configuration via QR codes
 
 <img width="1697" height="1348" alt="image" src="https://github.com/user-attachments/assets/54e952aa-2b2c-4f02-b32f-f4a32c5f5830" />
@@ -77,8 +77,8 @@ The installation script will automatically install these packages:
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/romarroca/yggsec-wireG.git
-cd yggsec-wireG
+git clone https://github.com/romarroca/yggsec-wg.git
+cd yggsec-wg
 ```
 
 2. **Run the installation script:**
@@ -125,17 +125,6 @@ The service runs with minimal Linux capabilities:
 - `CAP_NET_ADMIN` - Network interface management
 - `CAP_NET_RAW` - Raw socket access for WireGuard
 - `NoNewPrivileges=true` - Prevents privilege escalation
-
-### Sudo Privileges
-Limited sudo access for the `yggsec` user:
-```bash
-# /etc/sudoers.d/yggsec
-yggsec ALL=(root) NOPASSWD: \
-/usr/bin/wg, /usr/bin/wg-quick, /usr/sbin/ip, \
-/usr/sbin/nft, /usr/bin/systemctl start suricata, \
-/usr/bin/systemctl stop suricata, /usr/bin/systemctl restart suricata, \
-/usr/bin/suricata-update
-```
 
 ### Firewall Configuration
 - Creates persistent nftables configuration in `/etc/nftables.d/`
